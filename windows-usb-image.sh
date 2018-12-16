@@ -14,6 +14,8 @@ else
 	exit 1
 fi
 
+udisksctl unmount --block-device $DISK || true
+
 (
 	echo g
 	echo n
