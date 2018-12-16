@@ -104,6 +104,8 @@ then
 	if [ -z "$(sha1sum -c "$CHECKSUM_FILE_WINDOWS" | grep FAILED)" ]
 	then
 		echo The Windows partition passed the checksum
+		echo Removing the EFI directory from the Windows partition
+		rm -rf efi
 		cd "$CURRENT_PWD"
 		echo Unmounting the Windows partition
 		umount "$WINDOWS"
