@@ -6,11 +6,11 @@ CHECKSUM=$3
 
 CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}' )
 
-if [ "$(sha1sum $ISO | awk '{print $1}')" = "$CHECKSUM" ]
+if [ "$(sha1sum "$ISO" | awk '{print $1}')" = "$CHECKSUM" ]
 then
-	echo "ISO PASS"
+	echo ISO PASS
 else
-	echo "ISO FAIL"
+	echo ISO FAIL
 	exit 1
 fi
 
@@ -23,27 +23,27 @@ fi
 	echo t
 	echo 1
 	echo w
-) | fdisk $DISK || partprobe
+) | fdisk "$DISK" || partprobe
 
 sleep 3
 
-mkfs.ntfs -Q -s 512 $DISK-part1
+mkfs.ntfs -Q -s 512 "$DISK"-part1
 
 LOOP=$(mktemp -d)
-mount $ISO -o loop,ro $LOOP
+mount "$ISO" -o loop,ro "$LOOP"
 
 CHECKSUM_FILE=$(mktemp)
-find $LOOP -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE" \;
+find "$LOOP" -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE" \;
 
 EFI=$(mktemp -d)
-mount $DISK-part1 $EFI
+mount "$DISK"-part1 "$EFI"
 
-cp -r $LOOP $EFI
+cp -r "$LOOP" "$EFI"
 (
-	cd $EFI
-	sha1sum -c $CHECKSUM_FILE
+	cd "$EFI"
+	sha1sum -c "$CHECKSUM_FILE"
 )
 
-umount $LOOP $EFI
-rmdir $LOOP $EFI
-rm $CHECKSUM_FILE
+umount "$LOOP" "$EFI"
+rmdir "$LOOP" "$EFI"
+rm "$CHECKSUM_FILE"
