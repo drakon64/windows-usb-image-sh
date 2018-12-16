@@ -50,5 +50,4 @@ cp -r "$LOOP" "$EFI"
 )
 
 umount "$LOOP" "$EFI"
-rmdir "$LOOP" "$EFI"
-rm "$CHECKSUM_FILE"
+rm -rf "$LOOP" "$CHECKSUM_FILE" "$EFI"
