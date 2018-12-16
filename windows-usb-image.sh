@@ -41,7 +41,12 @@ mount "$DISK"-part1 "$EFI"
 cp -r "$LOOP" "$EFI"
 (
 	cd "$EFI"
-	sha1sum -c "$CHECKSUM_FILE"
+	if [ -z "$(sha1sum -c "$CHECKSUM_FILE" | grep FAILED)" ]
+	then
+		echo USB OK
+	else
+		echo USB FAIL
+	fi
 )
 
 umount "$LOOP" "$EFI"
