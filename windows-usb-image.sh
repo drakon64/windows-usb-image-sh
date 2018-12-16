@@ -36,7 +36,7 @@ udisksctl unmount --block-device $DISK || true
 
 sleep 3
 
-mkfs.vfat -S 512 "$DISK"-part1
+mkfs.fat -F 32 -S 512 "$DISK"-part1
 mkfs.ntfs -Q -s 512 "$DISK"-part2
 
 LOOP=$(mktemp -d)
