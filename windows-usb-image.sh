@@ -46,6 +46,5 @@ cp -r $LOOP $EFI
 )
 
 umount $LOOP $EFI
-udisksctl power-off --block-device $DISK
 rmdir $LOOP $EFI
 rm $CHECKSUM_FILE
