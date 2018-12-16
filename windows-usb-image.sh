@@ -30,13 +30,12 @@ sleep 3
 mkfs.ntfs -Q -s 512 $DISK-part1
 
 LOOP=$(mktemp -d)
-EFI=$(mktemp -d)
-CHECKSUM_FILE=$(mktemp)
-
 mount $ISO -o loop,ro $LOOP
 
+CHECKSUM_FILE=$(mktemp)
 find $LOOP -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE" \;
 
+EFI=$(mktemp -d)
 mount $DISK-part1 $EFI
 
 cp -r $LOOP $EFI
