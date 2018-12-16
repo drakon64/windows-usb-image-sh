@@ -3,11 +3,10 @@
 ISO=$1
 DISK=$2
 CHECKSUM=$3
-CHECKSUM_EXEC=$4
 
 CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}' )
 
-if [ "$($CHECKSUM_EXEC $ISO | awk '{print $1}')" = "$CHECKSUM" ]
+if [ "$(sha1sum $ISO | awk '{print $1}')" = "$CHECKSUM" ]
 then
 	echo "ISO PASS"
 else
@@ -36,14 +35,14 @@ CHECKSUM_FILE=$(mktemp)
 
 mount $ISO -o loop,ro $LOOP
 
-find $LOOP -type f -exec sh -c "$CHECKSUM_EXEC {} >> $CHECKSUM_FILE" \;
+find $LOOP -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE" \;
 
 mount $DISK-part1 $EFI
 
 cp -r $LOOP $EFI
 (
 	cd $EFI
-	$CHECKSUM_EXEC -c $CHECKSUM_FILE
+	sha1sum -c $CHECKSUM_FILE
 )
 
 umount $LOOP $EFI
