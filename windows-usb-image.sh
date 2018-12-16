@@ -8,14 +8,16 @@ CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}' )
 
 if [ "$(sha1sum "$ISO" | awk '{print $1}')" = "$CHECKSUM" ]
 then
-	echo ISO PASS
+	echo The ISO file passed the checksum
 else
-	echo ISO FAIL
+	echo The ISO file failed the checksum
 	exit 1
 fi
 
-udisksctl unmount --block-device $DISK || true
+echo Unmounting the USB
+udisksctl unmount --block-device "$DISK" || true
 
+echo Partitioning the USB
 (
 	echo g
 	echo n
@@ -34,47 +36,72 @@ udisksctl unmount --block-device $DISK || true
 	echo w
 ) | fdisk "$DISK" || partprobe
 
-sleep 3
-
+echo Creating the EFI System Partition
 mkfs.fat -F 32 -S 512 "$DISK"-part1
+
+echo Creating the Windows partition
 mkfs.ntfs -Q -s 512 "$DISK"-part2
 
+echo Mounting the Windows ISO
 LOOP=$(mktemp -d)
 mount "$ISO" -o loop,ro "$LOOP"
 
+echo Generating checksums for the EFI System Partition files
 CHECKSUM_FILE_EFI=$(mktemp)
 find "$LOOP"/efi -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_EFI" \;
 
+echo Mounting the EFI System Partition
 EFI=$(mktemp -d)
 mount "$DISK"-part1 "$EFI"
 
+CURRENT_PWD=$(pwd)
+
+echo Copying the EFI System Partition files
 cp -r "$LOOP"/efi "$EFI"
-(
-	cd "$EFI"
-	if [ -z "$(sha1sum -c "$CHECKSUM_FILE_EFI" | grep FAILED)" ]
-	then
-		echo ESP OK
-	else
-		echo ESP FAIL
-	fi
-)
+cd "$EFI"
+echo Validating the EFI System Partition files
+if [ -z "$(sha1sum -c "$CHECKSUM_FILE_EFI" | grep FAILED)" ]
+then
+	echo The EFI System Partition passed the checksum
+	cd "$CURRENT_PWD"
+	umount "$EFI"
+	rmdir "$EFI"
+	EFI_PASS=1
+else
+	echo The EFI System Partition failed the checksum
+	cd "$CURRENT_PWD"
+	umount "$EFI"
+	rmdir "$EFI"
+	EFI_PASS=0
+fi
 
-CHECKSUM_FILE_WINDOWS=$(mktemp)
-find "$LOOP" -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_WINDOWS" \;
+if [ $EFI_PASS -eq 1 ]
+then
+	echo Generating checksums for the Windows partiton files
+	CHECKSUM_FILE_WINDOWS=$(mktemp)
+	find "$LOOP" -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_WINDOWS" \;
 
-WINDOWS=$(mktemp -d)
-mount "$DISK"-part2 "$WINDOWS"
+	echo Mounting the Windows partition
+	WINDOWS=$(mktemp -d)
+	mount "$DISK"-part2 "$WINDOWS"
 
-cp -r "$LOOP"/* "$WINDOWS"
-(
+	echo Copying the Windows partition files
+	cp -r "$LOOP"/* "$WINDOWS"
 	cd "$WINDOWS"
+	echo Validating the Windows partition files
 	if [ -z "$(sha1sum -c "$CHECKSUM_FILE_WINDOWS" | grep FAILED)" ]
 	then
-		echo Windows OK
+		echo The Windows partition passed the checksum
+		cd "$CURRENT_PWD"
+		umount "$WINDOWS"
+		rmdir "$WINDOWS"
 	else
-		echo Windows FAIL
+		echo The Windows partition failed the checksum
+		cd "$CURRENT_PWD"
+		umount "$WINDOWS"
+		rmdir "$WINDOWS"
 	fi
-)
+fi
 
-umount "$LOOP" "$EFI" "$WINDOWS"
-rm -rf "$LOOP" "$CHECKSUM_FILE" "$EFI" "$WINDOWS"
+umount "$LOOP"
+rm -rf "$LOOP" "$CHECKSUM_FILE"
