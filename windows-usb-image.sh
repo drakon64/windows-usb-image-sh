@@ -74,12 +74,14 @@ if [ -z "$(sha1sum -c "$CHECKSUM_FILE_EFI" | grep FAILED)" ]
 then
 	echo The EFI System Partition passed the checksum
 	cd "$CURRENT_PWD"
+	echo Unmounting the EFI System Partition
 	umount "$EFI"
 	rmdir "$EFI"
 	EFI_PASS=1
 else
 	echo The EFI System Partition failed the checksum
 	cd "$CURRENT_PWD"
+	echo Unmounting the EFI System Partition
 	umount "$EFI"
 	rmdir "$EFI"
 	EFI_PASS=0
@@ -87,7 +89,7 @@ fi
 
 if [ $EFI_PASS -eq 1 ]
 then
-	echo Generating checksums for the Windows partiton files
+	echo Generating checksums for the Windows partition files
 	CHECKSUM_FILE_WINDOWS=$(mktemp)
 	find "$LOOP" -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_WINDOWS" \;
 
@@ -103,15 +105,19 @@ then
 	then
 		echo The Windows partition passed the checksum
 		cd "$CURRENT_PWD"
+		echo Unmounting the Windows partition
 		umount "$WINDOWS"
 		rmdir "$WINDOWS"
 	else
 		echo The Windows partition failed the checksum
 		cd "$CURRENT_PWD"
+		echo Unmounting the Windows Partition
 		umount "$WINDOWS"
 		rmdir "$WINDOWS"
 	fi
 fi
 
+echo Unmounting the Windows ISO
 umount "$LOOP"
+echo Cleaning up
 rm -rf "$LOOP" "$CHECKSUM_FILE"
