@@ -113,7 +113,7 @@ then
 	else
 		echo The Windows partition failed the checksum
 		cd "$CURRENT_PWD"
-		echo Unmounting the Windows Partition
+		echo Unmounting the Windows partition
 		umount "$WINDOWS"
 		rmdir "$WINDOWS"
 	fi
