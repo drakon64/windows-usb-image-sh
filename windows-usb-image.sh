@@ -1,9 +1,9 @@
 #!/bin/sh -e
 
-ISO=Win10_1809Oct_EnglishInternational_x64.iso
-DISK=/dev/disk/by-id/ata-TOSHIBA_MK8037GSX_87DJF6DHS
-CHECKSUM=1b7a6d1372140950b9fbb32900e2246c8682750c
-CHECKSUM_EXEC=sha1sum
+ISO=$1
+DISK=$2
+CHECKSUM=$3
+CHECKSUM_EXEC=$4
 
 CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}' )
 
