@@ -19,35 +19,60 @@ fi
 	echo n
 	echo
 	echo
-	echo
+	echo +100M
 	echo t
 	echo 1
+	echo n
+	echo
+	echo
+	echo
+	echo t
+	echo 2
+	echo 11
 	echo w
 ) | fdisk "$DISK" || partprobe
 
 sleep 3
 
-mkfs.ntfs -Q -s 512 "$DISK"-part1
+mkfs.vfat -S 512 "$DISK"-part1
+mkfs.ntfs -Q -s 512 "$DISK"-part2
 
 LOOP=$(mktemp -d)
 mount "$ISO" -o loop,ro "$LOOP"
 
-CHECKSUM_FILE=$(mktemp)
-find "$LOOP" -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE" \;
+CHECKSUM_FILE_EFI=$(mktemp)
+find "$LOOP"/efi -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_EFI" \;
 
 EFI=$(mktemp -d)
 mount "$DISK"-part1 "$EFI"
 
-cp -r "$LOOP" "$EFI"
+cp -r "$LOOP"/efi "$EFI"
 (
 	cd "$EFI"
-	if [ -z "$(sha1sum -c "$CHECKSUM_FILE" | grep FAILED)" ]
+	if [ -z "$(sha1sum -c "$CHECKSUM_FILE_EFI" | grep FAILED)" ]
 	then
-		echo USB OK
+		echo ESP OK
 	else
-		echo USB FAIL
+		echo ESP FAIL
 	fi
 )
 
-umount "$LOOP" "$EFI"
-rm -rf "$LOOP" "$CHECKSUM_FILE" "$EFI"
+CHECKSUM_FILE_WINDOWS=$(mktemp)
+find "$LOOP" -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_WINDOWS" \;
+
+WINDOWS=$(mktemp -d)
+mount "$DISK"-part2 "$WINDOWS"
+
+cp -r "$LOOP"/* "$WINDOWS"
+(
+	cd "$WINDOWS"
+	if [ -z "$(sha1sum -c "$CHECKSUM_FILE_WINDOWS" | grep FAILED)" ]
+	then
+		echo Windows OK
+	else
+		echo Windows FAIL
+	fi
+)
+
+umount "$LOOP" "$EFI" "$WINDOWS"
+rm -rf "$LOOP" "$CHECKSUM_FILE" "$EFI" "$WINDOWS"
