@@ -3,6 +3,7 @@
 ISO=$1
 DISK=$2
 CHECKSUM=$3
+BLOCK_SIZE=$4
 
 CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}' )
 
@@ -36,11 +37,20 @@ echo Partitioning the USB
 	echo w
 ) | fdisk "$DISK" || partprobe
 
-echo Creating the EFI System Partition
-mkfs.fat -F 32 -S 512 "$DISK"-part1
+if [ -z "$BLOCK_SIZE" ]
+then
+	echo Creating the EFI System Partition
+	mkfs.fat -F 32 "$DISK"-part1
 
-echo Creating the Windows partition
-mkfs.ntfs -Q -s 512 "$DISK"-part2
+	echo Creating the Windows partition
+	mkfs.ntfs -Q "$DISK"-part2
+else
+	echo Creating the EFI System Partition
+	mkfs.fat -F 32 -S "$BLOCK_SIZE" "$DISK"-part1
+
+	echo Creating the Windows partition
+	mkfs.ntfs -Q -s "$BLOCK_SIZE" "$DISK"-part2
+fi
 
 echo Mounting the Windows ISO
 LOOP=$(mktemp -d)
