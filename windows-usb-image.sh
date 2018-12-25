@@ -101,16 +101,18 @@ echo Partitioning the USB
 if [ -z "$BLOCK_SIZE" ]
 then
 	echo Creating the EFI System Partition
-	mkfs.fat -F 32 "$DISK"-part1
+	mkfs.fat -F 32 "$DISK"-part1 &
 
 	echo Creating the Windows partition
-	mkfs.ntfs -Q "$DISK"-part2
+	mkfs.ntfs -Q "$DISK"-part2 &
+	wait
 else
 	echo Creating the EFI System Partition
-	mkfs.fat -F 32 -S "$BLOCK_SIZE" "$DISK"-part1
+	mkfs.fat -F 32 -S "$BLOCK_SIZE" "$DISK"-part1 &
 
 	echo Creating the Windows partition
-	mkfs.ntfs -Q -s "$BLOCK_SIZE" "$DISK"-part2
+	mkfs.ntfs -Q -s "$BLOCK_SIZE" "$DISK"-part2 &
+	wait
 fi
 
 echo Mounting the Windows ISO
