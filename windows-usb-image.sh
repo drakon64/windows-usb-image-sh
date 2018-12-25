@@ -7,6 +7,67 @@ BLOCK_SIZE=$4
 
 CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}' )
 
+EFI_PASS=0
+
+efi()
+{
+	echo Copying the EFI System Partition files
+	cp -r "$LOOP"/efi "$EFI"
+	cd "$EFI"
+	echo Validating the EFI System Partition files
+	if [ -z "$(sha1sum -c "$CHECKSUM_FILE_EFI" | grep FAILED)" ]
+	then
+		echo The EFI System Partition passed the checksum
+		cd "$CURRENT_PWD"
+		echo Unmounting the EFI System Partition
+		umount "$EFI"
+		rmdir "$EFI"
+		EFI_PASS=1
+	else
+		echo The EFI System Partition failed the checksum
+		cd "$CURRENT_PWD"
+		echo Unmounting the EFI System Partition
+		umount "$EFI"
+		rmdir "$EFI"
+		EFI_PASS=0
+	fi
+}
+
+windows()
+{
+	if [ $EFI_PASS -eq 1 ]
+	then
+		echo Generating checksums for the Windows partition files
+		CHECKSUM_FILE_WINDOWS=$(mktemp)
+		find "$LOOP" -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_WINDOWS" \;
+
+		echo Mounting the Windows partition
+		WINDOWS=$(mktemp -d)
+		mount "$DISK"-part2 "$WINDOWS"
+
+		echo Copying the Windows partition files
+		cp -r "$LOOP"/* "$WINDOWS"
+		cd "$WINDOWS"
+		echo Validating the Windows partition files
+		if [ -z "$(sha1sum -c "$CHECKSUM_FILE_WINDOWS" | grep FAILED)" ]
+		then
+			echo The Windows partition passed the checksum
+			echo Removing the EFI directory from the Windows partition
+			rm -rf efi
+			cd "$CURRENT_PWD"
+			echo Unmounting the Windows partition
+			umount "$WINDOWS"
+			rmdir "$WINDOWS"
+		else
+			echo The Windows partition failed the checksum
+			cd "$CURRENT_PWD"
+			echo Unmounting the Windows partition
+			umount "$WINDOWS"
+			rmdir "$WINDOWS"
+		fi
+	fi
+}
+
 if [ "$(sha1sum "$ISO" | awk '{print $1}')" = "$CHECKSUM" ]
 then
 	echo The ISO file passed the checksum
@@ -66,58 +127,9 @@ mount "$DISK"-part1 "$EFI"
 
 CURRENT_PWD=$(pwd)
 
-echo Copying the EFI System Partition files
-cp -r "$LOOP"/efi "$EFI"
-cd "$EFI"
-echo Validating the EFI System Partition files
-if [ -z "$(sha1sum -c "$CHECKSUM_FILE_EFI" | grep FAILED)" ]
-then
-	echo The EFI System Partition passed the checksum
-	cd "$CURRENT_PWD"
-	echo Unmounting the EFI System Partition
-	umount "$EFI"
-	rmdir "$EFI"
-	EFI_PASS=1
-else
-	echo The EFI System Partition failed the checksum
-	cd "$CURRENT_PWD"
-	echo Unmounting the EFI System Partition
-	umount "$EFI"
-	rmdir "$EFI"
-	EFI_PASS=0
-fi
-
-if [ $EFI_PASS -eq 1 ]
-then
-	echo Generating checksums for the Windows partition files
-	CHECKSUM_FILE_WINDOWS=$(mktemp)
-	find "$LOOP" -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_WINDOWS" \;
-
-	echo Mounting the Windows partition
-	WINDOWS=$(mktemp -d)
-	mount "$DISK"-part2 "$WINDOWS"
-
-	echo Copying the Windows partition files
-	cp -r "$LOOP"/* "$WINDOWS"
-	cd "$WINDOWS"
-	echo Validating the Windows partition files
-	if [ -z "$(sha1sum -c "$CHECKSUM_FILE_WINDOWS" | grep FAILED)" ]
-	then
-		echo The Windows partition passed the checksum
-		echo Removing the EFI directory from the Windows partition
-		rm -rf efi
-		cd "$CURRENT_PWD"
-		echo Unmounting the Windows partition
-		umount "$WINDOWS"
-		rmdir "$WINDOWS"
-	else
-		echo The Windows partition failed the checksum
-		cd "$CURRENT_PWD"
-		echo Unmounting the Windows partition
-		umount "$WINDOWS"
-		rmdir "$WINDOWS"
-	fi
-fi
+efi &
+windows &
+wait
 
 echo Unmounting the Windows ISO
 umount "$LOOP"
