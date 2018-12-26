@@ -9,6 +9,15 @@ CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}' )
 
 efi()
 {
+	echo Generating checksums for the EFI System Partition files
+	CHECKSUM_FILE_EFI=$(mktemp)
+	cd "$LOOP"
+	find "efi" -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_EFI" \;
+
+	echo Mounting the EFI System Partition
+	EFI=$(mktemp -d)
+	mount "$DISK"-part1 "$EFI"
+
 	echo Copying the EFI System Partition files
 	cp -r "$LOOP"/efi "$EFI"
 	cd "$EFI"
@@ -110,15 +119,6 @@ CURRENT_PWD=$(pwd)
 echo Mounting the Windows ISO
 LOOP=$(mktemp -d)
 mount "$ISO" -o loop,ro "$LOOP"
-
-echo Generating checksums for the EFI System Partition files
-CHECKSUM_FILE_EFI=$(mktemp)
-cd "$LOOP"
-find efi -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_EFI" \;
-
-echo Mounting the EFI System Partition
-EFI=$(mktemp -d)
-mount "$DISK"-part1 "$EFI"
 
 efi &
 windows &
