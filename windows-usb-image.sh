@@ -16,7 +16,7 @@ else
 fi
 
 echo Unmounting the USB
-udisksctl unmount --block-device "$DISK" || true
+udisksctl unmount -b "$DISK" || true
 
 echo Partitioning the USB
 (
@@ -75,17 +75,15 @@ then
 	echo The EFI System Partition passed the checksum
 	cd "$CURRENT_PWD"
 	echo Unmounting the EFI System Partition
-	umount "$EFI"
-	rmdir "$EFI"
 	EFI_PASS=1
 else
 	echo The EFI System Partition failed the checksum
 	cd "$CURRENT_PWD"
 	echo Unmounting the EFI System Partition
-	umount "$EFI"
-	rmdir "$EFI"
 	EFI_PASS=0
 fi
+umount "$EFI"
+rmdir "$EFI"
 
 if [ $EFI_PASS -eq 1 ]
 then
@@ -108,15 +106,13 @@ then
 		rm -rf efi
 		cd "$CURRENT_PWD"
 		echo Unmounting the Windows partition
-		umount "$WINDOWS"
-		rmdir "$WINDOWS"
 	else
 		echo The Windows partition failed the checksum
 		cd "$CURRENT_PWD"
 		echo Unmounting the Windows partition
-		umount "$WINDOWS"
-		rmdir "$WINDOWS"
 	fi
+	umount "$WINDOWS"
+	rmdir "$WINDOWS"
 fi
 
 echo Unmounting the Windows ISO
