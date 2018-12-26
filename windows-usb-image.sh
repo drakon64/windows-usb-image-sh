@@ -101,8 +101,8 @@ mount "$ISO" -o loop,ro "$LOOP"
 
 CURRENT_PWD=$(pwd)
 
-windows &
 uefi &
+windows &
 wait
 
 echo Unmounting the Windows ISO
