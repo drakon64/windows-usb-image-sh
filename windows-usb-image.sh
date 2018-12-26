@@ -52,6 +52,8 @@ else
 	mkfs.ntfs -Q -s "$BLOCK_SIZE" "$DISK"-part2
 fi
 
+CURRENT_PWD=$(pwd)
+
 echo Mounting the Windows ISO
 LOOP=$(mktemp -d)
 mount "$ISO" -o loop,ro "$LOOP"
@@ -64,8 +66,6 @@ find efi -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_EFI" \;
 echo Mounting the EFI System Partition
 EFI=$(mktemp -d)
 mount "$DISK"-part1 "$EFI"
-
-CURRENT_PWD=$(pwd)
 
 echo Copying the EFI System Partition files
 cp -r "$LOOP"/efi "$EFI"
