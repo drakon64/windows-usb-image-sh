@@ -18,12 +18,10 @@ efi()
 		echo The EFI System Partition passed the checksum
 		cd "$CURRENT_PWD"
 		echo Unmounting the EFI System Partition
-		EFI_PASS=1
 	else
 		echo The EFI System Partition failed the checksum
 		cd "$CURRENT_PWD"
 		echo Unmounting the EFI System Partition
-		EFI_PASS=0
 	fi
 	umount "$EFI"
 	rmdir "$EFI"
