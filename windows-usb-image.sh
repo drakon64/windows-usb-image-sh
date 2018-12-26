@@ -7,6 +7,18 @@ BLOCK_SIZE=$4
 
 CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}' )
 
+uefi()
+{
+	if [ -z "$BLOCK_SIZE" ]
+	then
+		echo Copying UEFI:NTFS
+		dd if="$UEFI_NTFS" of="$DISK"-part1 count=1
+	else
+		echo Copying UEFI:NTFS
+		dd if="$UEFI_NTFS" of="$DISK"-part1 bs="$BLOCK_SIZE" count=1
+	fi
+}
+
 windows()
 {
 	echo Generating checksums for the Windows partition files
@@ -72,19 +84,11 @@ wget https://github.com/pbatard/rufus/raw/master/res/uefi/uefi-ntfs.img -O "$UEF
 
 if [ -z "$BLOCK_SIZE" ]
 then
-	echo Copying UEFI:NTFS
-	dd if="$UEFI_NTFS" of="$DISK"-part1 count=1 &
-
 	echo Creating the Windows partition
-	mkfs.ntfs -Q "$DISK"-part2 &
-	wait
+	mkfs.ntfs -Q "$DISK"-part2
 else
-	echo Copying UEFI:NTFS
-	dd if="$UEFI_NTFS" of="$DISK"-part1 bs="$BLOCK_SIZE" count=1 &
-
 	echo Creating the Windows partition
-	mkfs.ntfs -Q -s "$BLOCK_SIZE" "$DISK"-part2 &
-	wait
+	mkfs.ntfs -Q -s "$BLOCK_SIZE" "$DISK"-part2
 fi
 
 echo Mounting the Windows ISO
@@ -94,6 +98,7 @@ mount "$ISO" -o loop,ro "$LOOP"
 CURRENT_PWD=$(pwd)
 
 windows &
+uefi &
 wait
 
 echo Unmounting the Windows ISO
