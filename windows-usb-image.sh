@@ -35,7 +35,7 @@ echo Partitioning the USB
 	echo 2
 	echo 11
 	echo w
-) | fdisk "$DISK" || partprobe
+) | fdisk "$DISK" || partprobe && sleep 3
 
 if [ -z "$BLOCK_SIZE" ]
 then
@@ -58,7 +58,8 @@ mount "$ISO" -o loop,ro "$LOOP"
 
 echo Generating checksums for the EFI System Partition files
 CHECKSUM_FILE_EFI=$(mktemp)
-find "$LOOP"/efi -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_EFI" \;
+cd "$LOOP"
+find efi -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_EFI" \;
 
 echo Mounting the EFI System Partition
 EFI=$(mktemp -d)
@@ -71,6 +72,7 @@ cp -r "$LOOP"/efi "$EFI"
 cd "$EFI"
 echo Validating the EFI System Partition files
 if ! sha1sum -c "$CHECKSUM_FILE_EFI" | grep -q FAILED
+#if sha1sum -c "$CHECKSUM_FILE_EFI"
 then
 	echo The EFI System Partition passed the checksum
 	cd "$CURRENT_PWD"
@@ -89,7 +91,8 @@ if [ $EFI_PASS -eq 1 ]
 then
 	echo Generating checksums for the Windows partition files
 	CHECKSUM_FILE_WINDOWS=$(mktemp)
-	find "$LOOP" -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_WINDOWS" \;
+	cd "$LOOP"
+	find . -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_WINDOWS" \;
 
 	echo Mounting the Windows partition
 	WINDOWS=$(mktemp -d)
@@ -100,6 +103,7 @@ then
 	cd "$WINDOWS"
 	echo Validating the Windows partition files
 	if ! sha1sum -c "$CHECKSUM_FILE_WINDOWS" | grep -q FAILED
+#	if sha1sum -c "$CHECKSUM_FILE_WINDOWS"
 	then
 		echo The Windows partition passed the checksum
 		echo Removing the EFI directory from the Windows partition
