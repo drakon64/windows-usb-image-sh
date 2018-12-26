@@ -13,9 +13,11 @@ uefi()
 	then
 		echo Copying UEFI:NTFS
 		dd if="$UEFI_NTFS" of="$DISK"-part1 count=1
+		rm "$UEFI_NTFS"
 	else
 		echo Copying UEFI:NTFS
 		dd if="$UEFI_NTFS" of="$DISK"-part1 bs="$BLOCK_SIZE" count=1
+		rm "$UEFI_NTFS"
 	fi
 }
 
@@ -37,10 +39,12 @@ windows()
 	if sha1sum --status -c "$CHECKSUM_FILE_WINDOWS"
 	then
 		echo The Windows partition passed the checksum
+		rm "$CHECKSUM_FILE_WINDOWS"
 		cd "$CURRENT_PWD"
 		echo Unmounting the Windows partition
 	else
 		echo The Windows partition failed the checksum
+		rm "$CHECKSUM_FILE_WINDOWS"
 		cd "$CURRENT_PWD"
 		echo Unmounting the Windows partition
 	fi
@@ -104,4 +108,4 @@ wait
 echo Unmounting the Windows ISO
 umount "$LOOP"
 echo Cleaning up
-rm -rf "$LOOP" "$CHECKSUM_FILE"
+rmdir "$LOOP"
