@@ -114,11 +114,11 @@ else
 	wait
 fi
 
-CURRENT_PWD=$(pwd)
-
 echo Mounting the Windows ISO
 LOOP=$(mktemp -d)
 mount "$ISO" -o loop,ro "$LOOP"
+
+CURRENT_PWD=$(pwd)
 
 efi &
 windows &
