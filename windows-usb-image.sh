@@ -7,35 +7,6 @@ BLOCK_SIZE=$4
 
 CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}' )
 
-efi()
-{
-	echo Generating checksums for the EFI System Partition files
-	CHECKSUM_FILE_EFI=$(mktemp)
-	cd "$LOOP"
-	find "efi" -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_EFI" \;
-
-	echo Mounting the EFI System Partition
-	EFI=$(mktemp -d)
-	mount "$DISK"-part1 "$EFI"
-
-	echo Copying the EFI System Partition files
-	cp -r "$LOOP"/efi "$EFI"
-	cd "$EFI"
-	echo Validating the EFI System Partition files
-	if sha1sum --status -c "$CHECKSUM_FILE_EFI"
-	then
-		echo The EFI System Partition passed the checksum
-		cd "$CURRENT_PWD"
-		echo Unmounting the EFI System Partition
-	else
-		echo The EFI System Partition failed the checksum
-		cd "$CURRENT_PWD"
-		echo Unmounting the EFI System Partition
-	fi
-	umount "$EFI"
-	rmdir "$EFI"
-}
-
 windows()
 {
 	echo Generating checksums for the Windows partition files
@@ -54,8 +25,6 @@ windows()
 	if sha1sum --status -c "$CHECKSUM_FILE_WINDOWS"
 	then
 		echo The Windows partition passed the checksum
-		echo Removing the EFI directory from the Windows partition
-		rm -rf efi
 		cd "$CURRENT_PWD"
 		echo Unmounting the Windows partition
 	else
@@ -84,7 +53,7 @@ echo Partitioning the USB
 	echo n
 	echo
 	echo
-	echo +100M
+	echo +1K
 	echo t
 	echo 1
 	echo n
@@ -93,21 +62,25 @@ echo Partitioning the USB
 	echo
 	echo t
 	echo 2
-	echo 11
+	echo 1
 	echo w
 ) | fdisk "$DISK" || partprobe && sleep 3
 
+echo Downloading UEFI:NTFS
+UEFI_NTFS="$(mktemp)"
+wget https://github.com/pbatard/rufus/raw/master/res/uefi/uefi-ntfs.img -O "$UEFI_NTFS"
+
 if [ -z "$BLOCK_SIZE" ]
 then
-	echo Creating the EFI System Partition
-	mkfs.fat -F 32 "$DISK"-part1 &
+	echo Copying UEFI:NTFS
+	dd if="$UEFI_NTFS" of="$DISK"-part1 count=1 &
 
 	echo Creating the Windows partition
 	mkfs.ntfs -Q "$DISK"-part2 &
 	wait
 else
-	echo Creating the EFI System Partition
-	mkfs.fat -F 32 -S "$BLOCK_SIZE" "$DISK"-part1 &
+	echo Copying UEFI:NTFS
+	dd if="$UEFI_NTFS" of="$DISK"-part1 bs="$BLOCK_SIZE" count=1 &
 
 	echo Creating the Windows partition
 	mkfs.ntfs -Q -s "$BLOCK_SIZE" "$DISK"-part2 &
@@ -120,7 +93,6 @@ mount "$ISO" -o loop,ro "$LOOP"
 
 CURRENT_PWD=$(pwd)
 
-efi &
 windows &
 wait
 
