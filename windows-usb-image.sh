@@ -71,8 +71,7 @@ echo Copying the EFI System Partition files
 cp -r "$LOOP"/efi "$EFI"
 cd "$EFI"
 echo Validating the EFI System Partition files
-if ! sha1sum -c "$CHECKSUM_FILE_EFI" | grep -q FAILED
-#if sha1sum -c "$CHECKSUM_FILE_EFI"
+if sha1sum --status -c "$CHECKSUM_FILE_EFI"
 then
 	echo The EFI System Partition passed the checksum
 	cd "$CURRENT_PWD"
@@ -102,8 +101,7 @@ then
 	cp -r "$LOOP"/* "$WINDOWS"
 	cd "$WINDOWS"
 	echo Validating the Windows partition files
-	if ! sha1sum -c "$CHECKSUM_FILE_WINDOWS" | grep -q FAILED
-#	if sha1sum -c "$CHECKSUM_FILE_WINDOWS"
+	if sha1sum --status -c "$CHECKSUM_FILE_WINDOWS"
 	then
 		echo The Windows partition passed the checksum
 		echo Removing the EFI directory from the Windows partition
