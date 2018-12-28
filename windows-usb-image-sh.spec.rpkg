@@ -1,18 +1,27 @@
-Name: windows-usb-image-sh
-Version: 20181228
-Release: 1
+Name:    {{{ git_dir_name }}}
+Version: {{{ git_dir_version }}}
+Release: 1%{?dist}
 Summary: Bash script for copying disk images to block devices
-License: GPL-3.0
-Source: windows-usb-image.sh
-BuildRequires: unzip
+
+License: GPLv3+
+URL:     https://github.com/SocMinarch/windows-usb-image-sh
+VCS:     {{{ git_dir_vcs }}}
+
+Source:  {{{ git_dir_pack }}}
+
 BuildArch: noarch
 
 %description
 windows-usb-image-sh is a Bash script for copying disk images to block devices. It can either copy the disk image files to the block device (Copy Mode), or use DD to copy the disk image itself to the block device. Checksums are performed on both the source image and the destination block device to ensure data integrity.
 
+%prep
+{{{ git_dir_setup_macro }}}
+
 %install
-install -D -m 755 %{S} %buildroot/%_bindir/windows-usb-image
+install -D -m 755 windows-usb-image.sh %buildroot/%_bindir/windows-usb-image
 
 %files
-defattr(-,root,root)
 /%_bindir/windows-usb-image
+
+%changelog
+{{{ git_dir_changelog }}}
