@@ -1,6 +1,6 @@
 # windows-usb-image-sh
 
-Shell script for copying disk images to block devices
+Bash script for copying disk images to block devices
 
 ## Required arguments
 * `-s`    Source image file
