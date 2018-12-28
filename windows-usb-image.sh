@@ -177,7 +177,7 @@ dd_checksum()
 	fi
 }
 
-while getopts "h:s:d:c:b:C:D" arg ; do
+while getopts "h:s:d:c:b:CD" arg ; do
 	case $arg in
 		h)
 			usage
