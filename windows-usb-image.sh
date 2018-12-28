@@ -71,7 +71,7 @@ checksum_dd()
 	fi
 }
 
-while getopts "h:s:d:c:b" arg ; do
+while getopts "h:s:d:c:b:D" arg ; do
 	case $arg in
 		h)
 			usage
@@ -87,6 +87,9 @@ while getopts "h:s:d:c:b" arg ; do
 			;;
 		b)
 			BLOCK_SIZE=$OPTARG
+			;;
+		D)
+			DD=$OPTARG
 			;;
 		*)
 			usage
