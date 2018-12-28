@@ -128,21 +128,19 @@ dd_checksum()
 	if [ "$(head -c "$(stat -c "%s" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB has passed the checksum
 		exit 0
+	elif [ -z "$BLOCK_SIZE" ] ; then
+		dd if="$ISO" of="$DISK"
 	else
-		if [ -z "$BLOCK_SIZE" ] ; then
-			dd if="$ISO" of="$DISK" count=1
-		else
-			dd if="$ISO" of="$DISK" bs="$BLOCK_SIZE" count=1
-		fi
-		if [ "$(head -c "$(stat -c "%s" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
-				echo The USB has passed the checksum
-				udisksctl unmount -b "$DISK" || true
-				exit 0
-			else
-				echo The USB has failed the checksum
-				udisksctl unmount -b "$DISK" || true
-				exit 1
-		fi
+			dd if="$ISO" of="$DISK" bs="$BLOCK_SIZE"
+	fi
+	if [ "$(head -c "$(stat -c "%s" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
+		echo The USB has passed the checksum
+		udisksctl unmount -b "$DISK" || true
+		exit 0
+	else
+		echo The USB has failed the checksum
+		udisksctl unmount -b "$DISK" || true
+		exit 1
 	fi
 }
 
