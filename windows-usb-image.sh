@@ -55,7 +55,6 @@ checksum_dd()
 {
 	if [ "$(head -c "$(stat -c "%s" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB has passed the checksum
-		udisksctl unmount -b "$DISK" || true
 		exit 0
 	else
 		if [ -z "$BLOCK_SIZE" ] ; then
