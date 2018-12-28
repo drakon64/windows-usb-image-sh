@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 
 usage()
 {
@@ -9,7 +9,7 @@ Shell script for copying disk images to block devices
 Required arguments:
 -s    Source image file
 -d    Destination block device (/dev/disk/by-id/)
--c    SHA1 checksum of source image file"
+-c    SHA1 checksum of source image file
 -C|-D Specify whether to use Copy Mode (-C) or DD Mode (-D)
 
 Optional arguments:
@@ -41,10 +41,25 @@ iso_checksum()
 	fi
 }
 
+disk_mode()
+{
+	if [[ "$DISK" = /dev/disk/by-id/* ]] ; then
+		UEFI_PART=-part1
+		NTFS_PART=-part2
+	elif [[ "$DISK" = /dev/sd* ]] || [[ "$DISK" = /dev/hd* ]] || [[ "$DISK" = "/dev/nvme*" ]] ; then
+		UEFI_PART=1
+		NTFS_PART=2
+	else
+		echo Unknown block device path
+		exit 1
+	fi
+}
+
 cp_checksum()
 {
 	unmount
 	iso_checksum
+	disk_mode
 
 	echo Partitioning the USB
 	(
@@ -71,10 +86,10 @@ cp_checksum()
 
 	if [ -z "$BLOCK_SIZE" ] ; then
 		echo Creating the Windows partition
-		mkfs.ntfs -Q "$DISK"-part2
+		mkfs.ntfs -Q "$DISK$NTFS_PART"
 	else
 		echo Creating the Windows partition
-		mkfs.ntfs -Q -s "$BLOCK_SIZE" "$DISK"-part2
+		mkfs.ntfs -Q -s "$BLOCK_SIZE" "$DISK$NTFS_PART"
 	fi
 
 	echo Mounting the Windows ISO
@@ -98,11 +113,11 @@ uefi()
 {
 	if [ -z "$BLOCK_SIZE" ] ; then
 		echo Copying UEFI:NTFS
-		dd if="$UEFI_NTFS" of="$DISK"-part1 count=1
+		dd if="$UEFI_NTFS" of="$DISK$UEFI_PART"
 		rm "$UEFI_NTFS"
 	else
 		echo Copying UEFI:NTFS
-		dd if="$UEFI_NTFS" of="$DISK"-part1 bs="$BLOCK_SIZE" count=1
+		dd if="$UEFI_NTFS" of="$DISK$UEFI_PART" bs="$BLOCK_SIZE"
 		rm "$UEFI_NTFS"
 	fi
 }
@@ -116,7 +131,7 @@ windows()
 
 	echo Mounting the Windows partition
 	WINDOWS=$(mktemp -d)
-	mount "$DISK"-part2 "$WINDOWS"
+	mount "$DISK$NTFS_PART" "$WINDOWS"
 
 	echo Copying the Windows partition files
 	cp -r "$LOOP"/* "$WINDOWS"
@@ -141,6 +156,7 @@ dd_checksum()
 {
 	unmount
 	iso_checksum
+	disk_mode
 
 	if [ "$(head -c "$(stat -c "%s" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB has passed the checksum
