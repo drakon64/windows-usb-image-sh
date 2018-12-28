@@ -4,6 +4,7 @@ ISO=$1
 DISK=$2
 CHECKSUM=$3
 BLOCK_SIZE=$4
+DD=$5
 
 CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}' )
 
@@ -52,6 +53,19 @@ windows()
 	rmdir "$WINDOWS"
 }
 
+checksum_dd()
+{
+	if [ "$(head -c "$(stat -c "%s" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ]
+	then
+		echo The USB has passed the checksum
+		udisksctl unmount -b "$DISK" || true
+		exit 0
+	else
+		echo The USB has failed the checksum
+		exit 1
+	fi
+}
+
 if [ "$(sha1sum "$ISO" | awk '{print $1}')" = "$CHECKSUM" ]
 then
 	echo The ISO file passed the checksum
@@ -63,49 +77,54 @@ fi
 echo Unmounting the USB
 udisksctl unmount -b "$DISK" || true
 
-echo Partitioning the USB
-(
-	echo g
-	echo n
-	echo
-	echo
-	echo +1K
-	echo t
-	echo 1
-	echo n
-	echo
-	echo
-	echo
-	echo t
-	echo 2
-	echo 1
-	echo w
-) | fdisk "$DISK" || partprobe && sleep 3
-
-echo Downloading UEFI:NTFS
-UEFI_NTFS="$(mktemp)"
-wget https://github.com/pbatard/rufus/raw/master/res/uefi/uefi-ntfs.img -O "$UEFI_NTFS"
-
-if [ -z "$BLOCK_SIZE" ]
+if [ -z "$DD" ]
 then
-	echo Creating the Windows partition
-	mkfs.ntfs -Q "$DISK"-part2
+	echo Partitioning the USB
+	(
+		echo g
+		echo n
+		echo
+		echo
+		echo +1K
+		echo t
+		echo 1
+		echo n
+		echo
+		echo
+		echo
+		echo t
+		echo 2
+		echo 1
+		echo w
+		) | fdisk "$DISK" || partprobe && sleep 3
+
+		echo Downloading UEFI:NTFS
+		UEFI_NTFS="$(mktemp)"
+		wget https://github.com/pbatard/rufus/raw/master/res/uefi/uefi-ntfs.img -O "$UEFI_NTFS"
+
+		if [ -z "$BLOCK_SIZE" ]
+		then
+			echo Creating the Windows partition
+			mkfs.ntfs -Q "$DISK"-part2
+		else
+			echo Creating the Windows partition
+			mkfs.ntfs -Q -s "$BLOCK_SIZE" "$DISK"-part2
+		fi
+
+		echo Mounting the Windows ISO
+		LOOP=$(mktemp -d)
+		mount "$ISO" -o loop,ro "$LOOP"
+
+		CURRENT_PWD=$(pwd)
+
+		uefi &
+		windows &
+		wait
+
+		echo Unmounting the Windows ISO
+		umount "$LOOP"
+		echo Cleaning up
+		rmdir "$LOOP"
 else
-	echo Creating the Windows partition
-	mkfs.ntfs -Q -s "$BLOCK_SIZE" "$DISK"-part2
+	checksum_dd
 fi
-
-echo Mounting the Windows ISO
-LOOP=$(mktemp -d)
-mount "$ISO" -o loop,ro "$LOOP"
-
-CURRENT_PWD=$(pwd)
-
-uefi &
-windows &
-wait
-
-echo Unmounting the Windows ISO
-umount "$LOOP"
-echo Cleaning up
-rmdir "$LOOP"
