@@ -1,12 +1,9 @@
 #!/bin/sh -e
 
-ISO=$1
-DISK=$2
-CHECKSUM=$3
-BLOCK_SIZE=$4
-DD=$5
-
-CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}' )
+usage()
+{
+	echo "Usage: $0 -s <iso file> -d <destination block device> -c <iso sha1 checksum> [-b <partiton block size>] [--dd <run in DD mode>] [-h <help>]"
+}
 
 uefi()
 {
@@ -73,6 +70,31 @@ checksum_dd()
 		fi
 	fi
 }
+
+while getopts "h:s:d:c:b" arg ; do
+	case $arg in
+		h)
+			usage
+			;;
+		s)
+			ISO=$OPTARG
+			;;
+		d)
+			DISK=$OPTARG
+			;;
+		c)
+			CHECKSUM=$OPTARG
+			;;
+		b)
+			BLOCK_SIZE=$OPTARG
+			;;
+		*)
+			usage
+			;;
+	esac
+done
+
+CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}')
 
 if [ "$(sha1sum "$ISO" | awk '{print $1}')" = "$CHECKSUM" ] ; then
 	echo The ISO file passed the checksum
