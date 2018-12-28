@@ -113,11 +113,11 @@ uefi()
 {
 	if [ -z "$BLOCK_SIZE" ] ; then
 		echo Copying UEFI:NTFS
-		dd if="$UEFI_NTFS" of="$DISK$UEFI_PART" count=1
+		dd if="$UEFI_NTFS" of="$DISK$UEFI_PART"
 		rm "$UEFI_NTFS"
 	else
 		echo Copying UEFI:NTFS
-		dd if="$UEFI_NTFS" of="$DISK$UEFI_PART" bs="$BLOCK_SIZE" count=1
+		dd if="$UEFI_NTFS" of="$DISK$UEFI_PART" bs="$BLOCK_SIZE"
 		rm "$UEFI_NTFS"
 	fi
 }
