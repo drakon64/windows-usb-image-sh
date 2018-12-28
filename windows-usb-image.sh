@@ -14,7 +14,14 @@ Required arguments:
 
 Optional arguments:
 -b    Partition block size
+-h    Show help
+-H    Show full help'
+}
 
+full_usage()
+{
+	usage
+	echo '
 Copy Mode:
 Copy Mode will create a 512KB FAT32 partition at the start of the block device, and an NTFS partition in the remaining space. The FAT32 partition contains the UEFI:NTFS bootloader, and the NTFS partition contains the source image file contents.
 
@@ -177,10 +184,13 @@ dd_checksum()
 	fi
 }
 
-while getopts "h:s:d:c:b:CD" arg ; do
+while getopts "s:d:c:b:CDhH" arg ; do
 	case $arg in
 		h)
 			usage
+			;;
+		H)
+			full_usage
 			;;
 		s)
 			ISO=$OPTARG
