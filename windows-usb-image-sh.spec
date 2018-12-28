@@ -1,6 +1,6 @@
 Name: windows-usb-image-sh
 Version: 20181228
-Release: 0
+Release: 1
 Summary: Bash script for copying disk images to block devices
 License: GPL-3.0
 Source: windows-usb-image.sh
