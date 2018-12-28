@@ -10,8 +10,7 @@ CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}' )
 
 uefi()
 {
-	if [ -z "$BLOCK_SIZE" ]
-	then
+	if [ -z "$BLOCK_SIZE" ] ; then
 		echo Copying UEFI:NTFS
 		dd if="$UEFI_NTFS" of="$DISK"-part1 count=1
 		rm "$UEFI_NTFS"
@@ -37,8 +36,7 @@ windows()
 	cp -r "$LOOP"/* "$WINDOWS"
 	cd "$WINDOWS"
 	echo Validating the Windows partition files
-	if sha1sum --status -c "$CHECKSUM_FILE_WINDOWS"
-	then
+	if sha1sum --status -c "$CHECKSUM_FILE_WINDOWS" ; then
 		echo The Windows partition passed the checksum
 		rm "$CHECKSUM_FILE_WINDOWS"
 		cd "$CURRENT_PWD"
@@ -55,8 +53,7 @@ windows()
 
 checksum_dd()
 {
-	if [ "$(head -c "$(stat -c "%s" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ]
-	then
+	if [ "$(head -c "$(stat -c "%s" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB has passed the checksum
 		udisksctl unmount -b "$DISK" || true
 		exit 0
@@ -66,8 +63,7 @@ checksum_dd()
 	fi
 }
 
-if [ "$(sha1sum "$ISO" | awk '{print $1}')" = "$CHECKSUM" ]
-then
+if [ "$(sha1sum "$ISO" | awk '{print $1}')" = "$CHECKSUM" ] ; then
 	echo The ISO file passed the checksum
 else
 	echo The ISO file failed the checksum
@@ -77,8 +73,7 @@ fi
 echo Unmounting the USB
 udisksctl unmount -b "$DISK" || true
 
-if [ -z "$DD" ]
-then
+if [ -z "$DD" ] ; then
 	echo Partitioning the USB
 	(
 		echo g
@@ -102,8 +97,7 @@ then
 		UEFI_NTFS="$(mktemp)"
 		wget https://github.com/pbatard/rufus/raw/master/res/uefi/uefi-ntfs.img -O "$UEFI_NTFS"
 
-		if [ -z "$BLOCK_SIZE" ]
-		then
+		if [ -z "$BLOCK_SIZE" ] ; then
 			echo Creating the Windows partition
 			mkfs.ntfs -Q "$DISK"-part2
 		else
