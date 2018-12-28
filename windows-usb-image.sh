@@ -27,6 +27,7 @@ iso_checksum()
 cp_checksum()
 {
 	unmount
+	iso_checksum
 
 	echo Partitioning the USB
 	(
@@ -122,6 +123,7 @@ windows()
 dd_checksum()
 {
 	unmount
+	iso_checksum
 
 	if [ "$(head -c "$(stat -c "%s" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB has passed the checksum
@@ -131,7 +133,8 @@ dd_checksum()
 			dd if="$ISO" of="$DISK" count=1
 		else
 			dd if="$ISO" of="$DISK" bs="$BLOCK_SIZE" count=1
-			if [ "$(head -c "$(stat -c "%s" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
+		fi
+		if [ "$(head -c "$(stat -c "%s" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 				echo The USB has passed the checksum
 				udisksctl unmount -b "$DISK" || true
 				exit 0
@@ -139,7 +142,6 @@ dd_checksum()
 				echo The USB has failed the checksum
 				udisksctl unmount -b "$DISK" || true
 				exit 1
-			fi
 		fi
 	fi
 }
