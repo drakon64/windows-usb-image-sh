@@ -5,7 +5,7 @@ Shell script for copying disk images to block devices
 ## Required arguments
 * `-s`    Source image file
 * `-d`    Destination block device (`/dev/disk/by-id/`)
-* `-c`    SHA1 checksum of source image file"
+* `-c`    SHA1 checksum of source image file
 * `-C|-D` Specify whether to use Copy Mode (`-C`) or DD Mode (`-D`)
 
 ## Optional arguments
