@@ -3,6 +3,77 @@
 usage()
 {
 	echo "Usage: $0 -s <iso file> -d <destination block device> -c <iso sha1 checksum> [-b <partiton block size>] [--dd <run in DD mode>] [-h <help>]"
+	exit 0
+}
+
+unmount()
+{
+	echo Unmounting the USB
+	udisksctl unmount -b "$DISK" || true
+}
+
+iso_checksum()
+{
+	CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}')
+
+	if [ "$(sha1sum "$ISO" | awk '{print $1}')" = "$CHECKSUM" ] ; then
+		echo The ISO file passed the checksum
+	else
+		echo The ISO file failed the checksum
+		exit 1
+	fi
+}
+
+cp_checksum()
+{
+	unmount
+
+	echo Partitioning the USB
+	(
+		echo g
+		echo n
+		echo
+		echo
+		echo +1K
+		echo t
+		echo 1
+		echo n
+		echo
+		echo
+		echo
+		echo t
+		echo 2
+		echo 1
+		echo w
+	) | fdisk "$DISK" || partprobe && sleep 3
+
+	echo Downloading UEFI:NTFS
+	UEFI_NTFS="$(mktemp)"
+	wget https://github.com/pbatard/rufus/raw/master/res/uefi/uefi-ntfs.img -O "$UEFI_NTFS"
+
+	if [ -z "$BLOCK_SIZE" ] ; then
+		echo Creating the Windows partition
+		mkfs.ntfs -Q "$DISK"-part2
+	else
+		echo Creating the Windows partition
+		mkfs.ntfs -Q -s "$BLOCK_SIZE" "$DISK"-part2
+	fi
+
+	echo Mounting the Windows ISO
+	LOOP=$(mktemp -d)
+	mount "$ISO" -o loop,ro "$LOOP"
+
+	CURRENT_PWD=$(pwd)
+
+	uefi &
+	windows &
+	wait
+
+	echo Unmounting the Windows ISO
+	umount "$LOOP"
+
+	echo Cleaning up
+	rmdir "$LOOP"
 }
 
 uefi()
@@ -48,8 +119,10 @@ windows()
 	rmdir "$WINDOWS"
 }
 
-checksum_dd()
+dd_checksum()
 {
+	unmount
+
 	if [ "$(head -c "$(stat -c "%s" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB has passed the checksum
 		exit 0
@@ -71,7 +144,7 @@ checksum_dd()
 	fi
 }
 
-while getopts "h:s:d:c:b:D" arg ; do
+while getopts "h:s:d:c:b:C:D" arg ; do
 	case $arg in
 		h)
 			usage
@@ -88,73 +161,14 @@ while getopts "h:s:d:c:b:D" arg ; do
 		b)
 			BLOCK_SIZE=$OPTARG
 			;;
+		C)
+			cp_checksum
+			;;
 		D)
-			DD=$OPTARG
+			dd_checksum
 			;;
 		*)
 			usage
 			;;
 	esac
 done
-
-CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}')
-
-if [ "$(sha1sum "$ISO" | awk '{print $1}')" = "$CHECKSUM" ] ; then
-	echo The ISO file passed the checksum
-else
-	echo The ISO file failed the checksum
-	exit 1
-fi
-
-echo Unmounting the USB
-udisksctl unmount -b "$DISK" || true
-
-if [ -z "$DD" ] ; then
-	echo Partitioning the USB
-	(
-		echo g
-		echo n
-		echo
-		echo
-		echo +1K
-		echo t
-		echo 1
-		echo n
-		echo
-		echo
-		echo
-		echo t
-		echo 2
-		echo 1
-		echo w
-		) | fdisk "$DISK" || partprobe && sleep 3
-
-		echo Downloading UEFI:NTFS
-		UEFI_NTFS="$(mktemp)"
-		wget https://github.com/pbatard/rufus/raw/master/res/uefi/uefi-ntfs.img -O "$UEFI_NTFS"
-
-		if [ -z "$BLOCK_SIZE" ] ; then
-			echo Creating the Windows partition
-			mkfs.ntfs -Q "$DISK"-part2
-		else
-			echo Creating the Windows partition
-			mkfs.ntfs -Q -s "$BLOCK_SIZE" "$DISK"-part2
-		fi
-
-		echo Mounting the Windows ISO
-		LOOP=$(mktemp -d)
-		mount "$ISO" -o loop,ro "$LOOP"
-
-		CURRENT_PWD=$(pwd)
-
-		uefi &
-		windows &
-		wait
-
-		echo Unmounting the Windows ISO
-		umount "$LOOP"
-		echo Cleaning up
-		rmdir "$LOOP"
-else
-	checksum_dd
-fi
