@@ -117,6 +117,8 @@ cp_checksum()
 
 	echo Cleaning up
 	rmdir "$LOOP"
+
+	exit
 }
 
 uefi()
@@ -137,7 +139,7 @@ windows()
 	echo Generating checksums for the Windows partition files
 	CHECKSUM_FILE_WINDOWS=$(mktemp)
 	cd "$LOOP"
-	find . -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_WINDOWS" \;
+	find . -type f -exec sha1sum {} \; >> "$CHECKSUM_FILE_WINDOWS"
 
 	echo Mounting the Windows partition
 	WINDOWS=$(mktemp -d)
@@ -152,21 +154,14 @@ windows()
 		rm "$CHECKSUM_FILE_WINDOWS"
 		cd "$CURRENT_PWD"
 		echo Unmounting the Windows partition
-		PASS=1
 	else
 		echo The Windows partition failed the checksum
 		rm "$CHECKSUM_FILE_WINDOWS"
 		cd "$CURRENT_PWD"
 		echo Unmounting the Windows partition
-		PASS=0
 	fi
 	umount "$WINDOWS"
 	rmdir "$WINDOWS"
-	if [ "$PASS" = 1 ] ; then
-		exit 0
-	else
-		exit 1
-	fi
 }
 
 dd_checksum()
