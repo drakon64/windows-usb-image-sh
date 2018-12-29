@@ -77,7 +77,7 @@ cp_checksum()
 		echo n
 		echo
 		echo
-		echo +1K
+		echo +512K
 		echo t
 		echo 1
 		echo n
