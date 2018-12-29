@@ -137,7 +137,7 @@ windows()
 	echo Generating checksums for the Windows partition files
 	CHECKSUM_FILE_WINDOWS=$(mktemp)
 	cd "$LOOP"
-	find . -type f -exec sh -c "sha1sum {} >> $CHECKSUM_FILE_WINDOWS" \;
+	find . -type f -exec sha1sum {} \; >> "$CHECKSUM_FILE_WINDOWS"
 
 	echo Mounting the Windows partition
 	WINDOWS=$(mktemp -d)
