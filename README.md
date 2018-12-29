@@ -16,3 +16,5 @@ Copy Mode will create a 512KB FAT32 partition at the start of the block device, 
 
 ## DD Mode
 DD Mode will use `dd` to clone the source image onto the destination block device. Copying will not be performed if the destination block devices checksum is the same as that of the source images.
+
+<a href="https://copr.fedorainfracloud.org/coprs/socminarch/windows-usb-image-sh/package/windows-usb-image-sh/"><img src="https://copr.fedorainfracloud.org/coprs/socminarch/windows-usb-image-sh/package/windows-usb-image-sh/status_image/last_build.png" /></a>
