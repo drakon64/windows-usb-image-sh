@@ -5,7 +5,7 @@ Summary: Bash script for copying disk images to block devices
 
 License: GPLv3+
 URL:     https://github.com/SocMinarch/windows-usb-image-sh
-%if ! %{el6}
+%if ! 0%{?el6}
 VCS:     {{{ git_dir_vcs }}}
 %endif
 
