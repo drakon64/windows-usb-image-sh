@@ -123,15 +123,19 @@ cp_checksum()
 
 uefi()
 {
+	echo Copying UEFI:NTFS
+	UEFI_NTFS_CHECKSUM=$(sha1sum "$UEFI_NTFS" | awk '{print $1}')
 	if [ -z "$BLOCK_SIZE" ] ; then
-		echo Copying UEFI:NTFS
 		dd if="$UEFI_NTFS" of="$DISK$UEFI_PART" || echo Failed to copy UEFI:NTFS to the UEFI partition && exit 1
-		rm "$UEFI_NTFS"
 	else
-		echo Copying UEFI:NTFS
 		dd if="$UEFI_NTFS" of="$DISK$UEFI_PART" bs="$BLOCK_SIZE" || echo Failed to copy UEFI:NTFS to the UEFI partition && exit 1
-		rm "$UEFI_NTFS"
 	fi
+	if [ "$(head -c "$(stat -c "%s" "$UEFI_NTFS")" "$DISK$UEFI_PART" | sha1sum | awk '{print $1}')" = "$UEFI_NTFS_CHECKSUM" ] ; then
+		echo The UEFI partition passed the checksum
+	else
+		echo The UEFI partition failed the checksum
+	fi
+	rm "$UEFI_NTFS"
 }
 
 windows()
