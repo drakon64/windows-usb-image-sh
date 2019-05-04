@@ -16,6 +16,7 @@ Optional arguments:
 -b    Partition block size
 -h    Show help
 -H    Show full help'
+	exit 0
 }
 
 full_usage()
