@@ -3,12 +3,14 @@
 USAGE='windows-usb-image-sh\n\nBash script for copying disk images to block devices\n\nRequired arguments:\n-s    Source image file\n-d    Destination block device (/dev/disk/by-id/)\n-c    SHA1 checksum of source image file\n-C|-D Specify whether to use Copy Mode (-C) or DD Mode (-D)\n\nOptional arguments:\n-b    Partition block size\n-h    Show help\n-H    Show full help\n'
 FULL_USAGE='\nCopy Mode:\nCopy Mode will create a 512KB FAT32 partition at the start of the block device, and an NTFS partition in the remaining space. The FAT32 partition contains the UEFI:NTFS bootloader, and the NTFS partition contains the source image file contents.\n\nDD Mode:\nDD Mode will use "dd" to clone the source image onto the destination block device. Copying will not be performed if the destination block devices checksum is the same as that of the source images.\n'
 
+#shellcheck disable=SC2059
 usage()
 {
 	printf "$USAGE"
 	exit 0
 }
 
+#shellcheck disable=SC2059
 full_usage()
 {
 	printf "$USAGE"
