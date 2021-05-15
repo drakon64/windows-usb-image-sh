@@ -56,16 +56,15 @@ disk_mode()
 	fi
 }
 
-stat_mode()
+os()
 {
 	UNAME="$(uname -s)"	
-	case "${UNAME}" in
-		Linux)	STAT=-c "%s";;
-		*BSD)	STAT=-f%z;;
-		Darwin)	STAT=-f%z;;
-	esac
 
-	if [ -z "$STAT" ] ; then
+	if [ "$UNAME" = "Linux" ] ; then
+		STAT=-c "%s"
+	elif [ "$UNAME" = "BSD" ] || [ "$UNAME" = "Darwin" ] ; then
+		STAT=-f%z
+	else
 		echo Unknown OS
 		exit 1
 	fi
@@ -73,6 +72,13 @@ stat_mode()
 
 cp_checksum()
 {
+	os
+
+	if ! [ "$UNAME" = "Linux" ] ; then
+		echo "Copy Mode is currently only supported under Linux"
+		exit 1
+	fi
+
 	unmount
 	iso_checksum
 	disk_mode
@@ -129,7 +135,7 @@ cp_checksum()
 
 uefi()
 {
-	stat_mode
+	os
 
 	echo Copying UEFI:NTFS
 	UEFI_NTFS_CHECKSUM=$(sha1sum "$UEFI_NTFS" | awk '{print $1}')
@@ -181,7 +187,7 @@ dd_checksum()
 	unmount
 	iso_checksum
 	disk_mode
-	stat_mode
+	os
 
 	if [ "$(head -c "$(stat $STAT "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB already matches the ISO
