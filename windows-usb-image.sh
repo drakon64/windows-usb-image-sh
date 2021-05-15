@@ -47,6 +47,9 @@ disk_mode()
 	elif [[ "$DISK" = "/dev/nvme*" ]] ; then
 		UEFI_PART=p1
 		NTFS_PART=p2
+	elif [[ "$DISK" = "/dev/disk*"]] ; then
+		UEFI_PART=s1
+		NTFS_PART=s2
 	else
 		echo Unknown block device path
 		exit 1
