@@ -23,17 +23,17 @@ os()
 	UNAME="$(uname -s)"	
 
 	if [ "$UNAME" = "Linux" ] ; then
-		UNMOUNT=udisksctl
-		UNMOUNT_ARGS=unmount -b
+		UNMOUNT="udisksctl"
+		UNMOUNT_ARGS="unmount -b"
 
 		STAT=-c "%s"
 	elif [ "$UNAME" = "BSD" ] || [ "$UNAME" = "Darwin" ] ; then
 		if [ "$UNAME" = "Darwin" ] ; then
-			UNMOUNT=diskutil
-			UNMOUNT_ARGS=unmountDisk
+			UNMOUNT="diskutil"
+			UNMOUNT_ARGS="unmountDisk"
 		else
-			UNMOUNT=udisksctl
-			UNMOUNT_ARGS=unmount -b
+			UNMOUNT="udisksctl"
+			UNMOUNT_ARGS="unmount -b"
 		fi
 		STAT=-f%z
 	else
