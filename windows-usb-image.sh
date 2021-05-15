@@ -135,7 +135,7 @@ dd_checksum()
 	disk_mode
 	os
 
-	if [ "$(head -c "$(stat $STAT "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
+	if [ "$(head -c "$(stat "$STAT" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB already matches the ISO
 		exit 0
 	elif [ -z "$BLOCK_SIZE" ] ; then
@@ -144,7 +144,7 @@ dd_checksum()
 		dd if="$ISO" of="$DISK" bs="$BLOCK_SIZE"
 	fi
 
-	if [ "$(head -c "$(stat $STAT "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
+	if [ "$(head -c "$(stat "$STAT" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB has passed the checksum
 		unmount || true
 		exit 0
