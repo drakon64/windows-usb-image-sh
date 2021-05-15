@@ -23,15 +23,18 @@ os()
 	UNAME="$(uname -s)"	
 
 	if [ "$UNAME" = "Linux" ] ; then
-		UNMOUNT=udisksctl unmount -b
+		UNMOUNT="udisksctl"
+		UNMOUNT_ARGS="unmount -b"
 		STAT=-c "%s"
 	elif [ "$UNAME" = "BSD" ] || [ "$UNAME" = "Darwin" ] ; then
 		if [ "$UNAME" = "Darwin" ] ; then
-			UNMOUNT=diskutil unmount
+			UNMOUNT="diskutil"
+			UNMOUNT_ARGS="unmountDisk"
 		else
-			UNMOUNT=udisksctl unmount -b
+			UNMOUNT="udisksctl"
+			UNMOUNT_ARGS="unmount -b"
 		fi
-		STAT=-f%z
+		STAT="-f%z"
 	else
 		echo Unknown OS
 		exit 1
@@ -41,7 +44,7 @@ os()
 unmount()
 {
 	echo Unmounting the USB
-	"$UNMOUNT" "$DISK"
+	"$UNMOUNT" "$UNMOUNT_ARGS" "$DISK"
 }
 
 iso_checksum()
@@ -196,10 +199,10 @@ windows()
 
 dd_checksum()
 {
+	os
 	unmount
 	iso_checksum
 	disk_mode
-	os
 
 	if [ "$(head -c "$(stat $STAT "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB already matches the ISO
