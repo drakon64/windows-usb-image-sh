@@ -133,7 +133,7 @@ cp_checksum()
 	echo Unmounting the Windows ISO
 	umount "$LOOP"
 
-	unmount
+	unmount || true
 
 	echo Cleaning up
 	rmdir "$LOOP"
@@ -177,16 +177,13 @@ windows()
 	echo Validating the Windows partition files
 	if sha1sum --status -c "$CHECKSUM_FILE_WINDOWS" ; then
 		echo The Windows partition passed the checksum
-		rm "$CHECKSUM_FILE_WINDOWS"
-		cd "$CURRENT_PWD"
-		echo Unmounting the Windows partition
 	else
 		FAILED=true
 		echo The Windows partition failed the checksum
-		rm "$CHECKSUM_FILE_WINDOWS"
-		cd "$CURRENT_PWD"
-		echo Unmounting the Windows partition
 	fi
+	rm "$CHECKSUM_FILE_WINDOWS"
+	cd "$CURRENT_PWD"
+	echo Unmounting the Windows partition
 	umount "$WINDOWS"
 	rmdir "$WINDOWS"
 
