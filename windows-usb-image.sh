@@ -18,10 +18,30 @@ full_usage()
 	exit 0
 }
 
+os()
+{
+	UNAME="$(uname -s)"	
+
+	if [ "$UNAME" = "Linux" ] ; then
+		UNMOUNT=udisksctl unmount -b
+		STAT=-c "%s"
+	elif [ "$UNAME" = "BSD" ] || [ "$UNAME" = "Darwin" ] ; then
+		if [ "$UNAME" = "Darwin" ] ; then
+			UNMOUNT=diskutil unmount
+		else
+			UNMOUNT=udisksctl unmount -b
+		fi
+		STAT=-f%z
+	else
+		echo Unknown OS
+		exit 1
+	fi
+}
+
 unmount()
 {
 	echo Unmounting the USB
-	udisksctl unmount -b "$DISK" || true
+	"$UNMOUNT" "$DISK"
 }
 
 iso_checksum()
@@ -52,20 +72,6 @@ disk_mode()
 		NTFS_PART=s2
 	else
 		echo Unknown block device path
-		exit 1
-	fi
-}
-
-os()
-{
-	UNAME="$(uname -s)"	
-
-	if [ "$UNAME" = "Linux" ] ; then
-		STAT=-c "%s"
-	elif [ "$UNAME" = "BSD" ] || [ "$UNAME" = "Darwin" ] ; then
-		STAT=-f%z
-	else
-		echo Unknown OS
 		exit 1
 	fi
 }
@@ -127,10 +133,12 @@ cp_checksum()
 	echo Unmounting the Windows ISO
 	umount "$LOOP"
 
+	unmount
+
 	echo Cleaning up
 	rmdir "$LOOP"
 
-	exit
+	exit 0
 }
 
 uefi()
@@ -207,11 +215,11 @@ dd_checksum()
 
 	if [ "$(head -c "$(stat $STAT "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB has passed the checksum
-		udisksctl unmount -b "$DISK" || true
+		unmount || true
 		exit 0
 	else
 		echo The USB has failed the checksum
-		udisksctl unmount -b "$DISK" || true
+		unmount || true
 		exit 1
 	fi
 }
