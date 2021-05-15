@@ -8,14 +8,14 @@ Bash script for copying disk images to block devices
 
 ## Required arguments
 * `-s`    Source image file
-* `-d`    Destination block device (`/dev/disk/by-id/`)
+* `-d`    Destination block device
 * `-c`    SHA1 checksum of source image file
-* `-C|-D` Specify whether to use Copy Mode (`-C`) or DD Mode (`-D`)
+* `-C|-D` Specify whether to use Copy Mode (`-C`) (Linux only) or DD Mode (`-D`)
 
 ## Optional arguments
 * `-b`    Partition block size
 
-## Copy Mode
+## Copy Mode (Linux only)
 Copy Mode will create a 512KB FAT32 partition at the start of the block device, and an NTFS partition in the remaining space. The FAT32 partition contains the UEFI:NTFS bootloader, and the NTFS partition contains the source image file contents.
 
 ## DD Mode
