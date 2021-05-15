@@ -56,6 +56,21 @@ disk_mode()
 	fi
 }
 
+stat_mode()
+{
+	UNAME="$(uname -s)"	
+	case "${UNAME}" in
+		Linux)	STAT=-c "%s";;
+		*BSD)	STAT=-f%z;;
+		Darwin)	STAT=-f%z;;
+	esac
+
+	if [ -z "$STAT" ] ; then
+		echo Unknown OS
+		exit 1
+	fi
+}
+
 cp_checksum()
 {
 	unmount
@@ -114,6 +129,8 @@ cp_checksum()
 
 uefi()
 {
+	stat_mode
+
 	echo Copying UEFI:NTFS
 	UEFI_NTFS_CHECKSUM=$(sha1sum "$UEFI_NTFS" | awk '{print $1}')
 	if [ -z "$BLOCK_SIZE" ] ; then
@@ -121,7 +138,7 @@ uefi()
 	else
 		dd if="$UEFI_NTFS" of="$DISK$UEFI_PART" bs="$BLOCK_SIZE" || echo Failed to copy UEFI:NTFS to the UEFI partition
 	fi
-	if [ "$(head -c "$(stat -c "%s" "$UEFI_NTFS")" "$DISK$UEFI_PART" | sha1sum | awk '{print $1}')" = "$UEFI_NTFS_CHECKSUM" ] ; then
+	if [ "$(head -c "$(stat "$STAT" "$UEFI_NTFS")" "$DISK$UEFI_PART" | sha1sum | awk '{print $1}')" = "$UEFI_NTFS_CHECKSUM" ] ; then
 		echo The UEFI partition passed the checksum
 	else
 		echo The UEFI partition failed the checksum
@@ -164,16 +181,18 @@ dd_checksum()
 	unmount
 	iso_checksum
 	disk_mode
+	stat_mode
 
-	if [ "$(head -c "$(stat -c "%s" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
-		echo The USB has passed the checksum
+	if [ "$(head -c "$(stat $STAT "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
+		echo The USB already matches the ISO
 		exit 0
 	elif [ -z "$BLOCK_SIZE" ] ; then
 		dd if="$ISO" of="$DISK"
 	else
 		dd if="$ISO" of="$DISK" bs="$BLOCK_SIZE"
 	fi
-	if [ "$(head -c "$(stat -c "%s" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
+
+	if [ "$(head -c "$(stat $STAT "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB has passed the checksum
 		udisksctl unmount -b "$DISK" || true
 		exit 0
