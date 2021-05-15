@@ -44,10 +44,10 @@ disk_mode()
 	elif [[ "$DISK" = /dev/sd* ]] || [[ "$DISK" = /dev/hd* ]] ; then
 		UEFI_PART=1
 		NTFS_PART=2
-	elif [[ "$DISK" = "/dev/nvme*" ]] ; then
+	elif [[ "$DISK" = /dev/nvme* ]] ; then
 		UEFI_PART=p1
 		NTFS_PART=p2
-	elif [[ "$DISK" = "/dev/disk*"]] ; then
+	elif [[ "$DISK" = /dev/disk* ]] ; then
 		UEFI_PART=s1
 		NTFS_PART=s2
 	else
