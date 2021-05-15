@@ -120,7 +120,7 @@ cp_checksum()
 	echo Unmounting the Windows ISO
 	umount "$LOOP"
 
-	if [ "$UNAME" = "Linux" ] ; then
+	if ! [ "$UNAME" = "Darwin" ] ; then
 		echo Cleaning up
 		rmdir "$LOOP" "$PART_MOUNT" 
 	fi
