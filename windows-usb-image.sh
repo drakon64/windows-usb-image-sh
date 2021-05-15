@@ -80,7 +80,7 @@ cp_checksum()
 
 	echo Downloading UEFI:NTFS
 	UEFI_NTFS="$(mktemp)"
-	wget https://github.com/pbatard/rufus/raw/master/res/uefi/uefi-ntfs.img -O "$UEFI_NTFS"
+	curl https://github.com/pbatard/rufus/raw/master/res/uefi/uefi-ntfs.img -o "$UEFI_NTFS"
 
 	if [ -z "$BLOCK_SIZE" ] ; then
 		echo Creating the Windows partition
