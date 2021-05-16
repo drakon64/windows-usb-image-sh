@@ -93,6 +93,16 @@ cp_checksum()
 	echo Formatting the USB drive as FAT32
 	if [ "$UNAME" = "Darwin" ] ; then
 		diskutil eraseDisk FAT32 WIN MBR "$DISK"
+		(
+			echo edit 1
+			echo EF
+			echo
+			echo
+			echo
+			echo flag 1
+			echo quit
+			echo y
+		) | fdisk -e "$DISK"
 		PART_MOUNT="/Volumes/WIN/"
 	else
 		(
