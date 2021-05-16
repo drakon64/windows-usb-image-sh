@@ -143,7 +143,7 @@ cp_checksum()
 	wimsplit "$LOOP"/sources/install.wim /Volumes/WIN/sources/install.swm 1000 --check
 
 	echo Validating the Windows partition files
-	if $(cd "$PART_MOUNT" ; sha1sum --status -c "$CHECKSUM_FILE_WINDOWS") ; then
+	if cd "$PART_MOUNT" ; sha1sum --status -c "$CHECKSUM_FILE_WINDOWS" ; then
 		echo The Windows partition passed the checksum
 	else
 		FAILED=true
