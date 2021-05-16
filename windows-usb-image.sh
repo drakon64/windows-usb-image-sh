@@ -139,7 +139,11 @@ cp_checksum()
 		rmdir "$LOOP" "$PART_MOUNT" 
 	fi
 	
+	if ! [ -z "$FAILED" ] ; then
 	exit 0
+	else
+		exit 1
+	fi
 }
 
 dd_checksum()
