@@ -109,11 +109,24 @@ cp_checksum()
 		mount -o loop "$DISK""$PART" "$PART_MOUNT"
 	fi
 
-	echo Copying the Windows 10 ISO files
+	echo Generating checksums for the Windows partition files
+	CHECKSUM_FILE_WINDOWS=$(mktemp)
+	find "$LOOP" -type f \( ! -iname "install.wim" \) -exec sha1sum {} \; >> "$CHECKSUM_FILE_WINDOWS"
+
+	echo Copying the Windows ISO files
 	rsync -qah --exclude=sources/install.wim "$LOOP"/* "$PART_MOUNT"
 
 	echo Splitting the Windows 10 install.wim file
-	wimsplit "$LOOP"/sources/install.wim /Volumes/WIN10/sources/install.swm 1000 --check
+	wimsplit "$LOOP"/sources/install.wim /Volumes/WIN/sources/install.swm 1000 --check
+
+	echo Validating the Windows partition files
+	if $(cd "$PART_MOUNT" ; sha1sum --status -c "$CHECKSUM_FILE_WINDOWS") ; then
+		echo The Windows partition passed the checksum
+	else
+		FAILED=true
+		echo The Windows partition failed the checksum
+	fi
+	rm "$CHECKSUM_FILE_WINDOWS"
 
 	unmount || true
 	
