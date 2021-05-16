@@ -96,17 +96,18 @@ cp_checksum()
 		PART_MOUNT="/Volumes/WIN/"
 	else
 		(
-			echo g
+			echo o
 			echo n
 			echo
 			echo
-			echo 
+			echo
+			echo
 			echo t
-			echo 1
-			echo 1
+			echo ef
+			echo a
 			echo w
 		) | fdisk "$DISK" || partprobe && sleep 3
-		mkfs.fat -F F32 "$DISK""$PART"
+		mkfs.fat -F 32 "$DISK""$PART"
 		PART_MOUNT=$(mktemp -d)
 		mount -o loop "$DISK""$PART" "$PART_MOUNT"
 	fi
