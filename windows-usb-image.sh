@@ -117,7 +117,7 @@ cp_checksum()
 
 	echo Copying the Windows ISO files
 	rsync -qah --exclude=sources/install.wim "$LOOP"/* "$PART_MOUNT"
-
+	
 	echo Splitting the Windows 10 install.wim file
 	wimsplit "$LOOP"/sources/install.wim /Volumes/WIN/sources/install.swm 1000 --check
 
@@ -141,7 +141,7 @@ cp_checksum()
 	fi
 	
 	if ! [ -z "$FAILED" ] ; then
-	exit 0
+		exit 0
 	else
 		exit 1
 	fi
