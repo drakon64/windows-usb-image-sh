@@ -100,8 +100,9 @@ cp_checksum()
 			echo n
 			echo
 			echo
+			echo 
 			echo t
-			echo 2
+			echo 1
 			echo 1
 			echo w
 		) | fdisk "$DISK" || partprobe && sleep 3
