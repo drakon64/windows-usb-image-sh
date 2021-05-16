@@ -139,7 +139,7 @@ cp_checksum()
 	echo Copying the Windows ISO files
 	rsync -qah --exclude=sources/install.wim "$LOOP"/* "$PART_MOUNT"
 	
-	echo Splitting the Windows 10 install.wim file
+	echo Splitting the Windows `install.wim` file
 	wimsplit "$LOOP"/sources/install.wim /Volumes/WIN/sources/install.swm 1000 --check
 
 	echo Validating the Windows partition files
@@ -176,15 +176,19 @@ dd_checksum()
 	unmount
 	iso_checksum
 
+	echo Checking if the USB already matches the ISO
 	if [ "$(head -c "$(stat "$STAT" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB already matches the ISO
 		exit 0
 	elif [ -z "$BLOCK_SIZE" ] ; then
+		echo Writing the ISO to the USB
 		dd if="$ISO" of="$DISK"
 	else
+		echo Writing the ISO to the USB
 		dd if="$ISO" of="$DISK" bs="$BLOCK_SIZE"
 	fi
 
+	echo Checking the USB integrity
 	if [ "$(head -c "$(stat "$STAT" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB has passed the checksum
 		unmount || true
