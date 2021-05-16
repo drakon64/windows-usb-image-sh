@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 USAGE='windows-usb-image-sh\n\nBash script for copying Windows ISO images (or any ISO) to block devices\n\nRequired arguments:\n-s    Source image file\n-d    Destination block device (/dev/disk/by-id/)\n-c    SHA1 checksum of source image file\n-C|-D Specify whether to use Copy Mode (-C) or DD Mode (-D)\n\nOptional arguments:\n-b    Partition block size\n-h    Show help\n-H    Show full help\n'
-FULL_USAGE='\nCopy Mode:\nCopy Mode will format the destination block device with an MBR partition table and create a FAT32 partition on it. This partition contains the source image file contents. The Windows `install.wim` file will be split into blocks of 1000MB to avoid FAT32 file size limitations.\n\nThis USB should be compatible with both BIOS and UEFI.\n\nDD Mode:\nDD Mode will use `dd` to clone the source image onto the destination block device. Copying will not be performed if the destination block devices checksum is the same as that of the source images.\n'
+FULL_USAGE='\nCopy Mode:\nCopy Mode will format the destination block device with an MBR partition table and create a FAT32 partition on it. This partition contains the source image file contents. The Windows "install.wim" file will be split into blocks of 1000MB to avoid FAT32 file size limitations.\n\nThis USB should be compatible with both BIOS and UEFI.\n\nDD Mode:\nDD Mode will use "dd" to clone the source image onto the destination block device. Copying will not be performed if the destination block devices checksum is the same as that of the source images.\n'
 
 #shellcheck disable=SC2059
 usage()
@@ -139,7 +139,7 @@ cp_checksum()
 	echo Copying the Windows ISO files
 	rsync -qah --exclude=sources/install.wim "$LOOP"/* "$PART_MOUNT"
 	
-	echo Splitting the Windows `install.wim` file
+	echo Splitting the Windows "install.wim" file
 	wimsplit "$LOOP"/sources/install.wim /Volumes/WIN/sources/install.swm 1000 --check
 
 	echo Validating the Windows partition files
