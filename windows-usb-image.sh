@@ -35,7 +35,7 @@ os()
 			UNMOUNT="udisksctl"
 			UNMOUNT_ARGS="unmount -b"
 		fi
-		STAT=-f%z
+		STAT="-f%z"
 	else
 		echo Unknown OS
 		exit 1
