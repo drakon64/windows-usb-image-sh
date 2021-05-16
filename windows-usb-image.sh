@@ -105,6 +105,7 @@ cp_checksum()
 			echo 1
 			echo w
 		) | fdisk "$DISK" || partprobe && sleep 3
+		mkfs.fat -F F32 "$DISK""$PART"
 		PART_MOUNT=$(mktemp -d)
 		mount -o loop "$DISK""$PART" "$PART_MOUNT"
 	fi
