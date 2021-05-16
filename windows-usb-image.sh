@@ -76,8 +76,18 @@ disk_mode()
 	fi
 }
 
+check_if_writeable()
+{
+	if ! [ -w "$DISK" ] ; then
+		echo Cannot write to "$DISK": Permission denied
+		exit 1
+	fi
+}
+
 cp_checksum()
 {
+	disk_mode
+	check_if_writeable
 	os
 	unmount
 	iso_checksum
@@ -160,10 +170,11 @@ cp_checksum()
 
 dd_checksum()
 {
+	disk_mode
+	check_if_writeable
+	os
 	unmount
 	iso_checksum
-	disk_mode
-	os
 
 	if [ "$(head -c "$(stat "$STAT" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB already matches the ISO
