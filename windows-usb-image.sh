@@ -18,7 +18,7 @@ full_usage()
 
 os()
 {
-	UNAME="$(uname -s)"	
+	UNAME="$(uname -s)"
 
 	if [ "$UNAME" = "Linux" ] ; then
 		UNMOUNT="udisksctl"
@@ -133,33 +133,63 @@ cp_checksum()
 	echo Generating checksums for the Windows partition files
 	CHECKSUM_FILE_WINDOWS=$(mktemp)
 	find "$LOOP" -type f \( ! -iname "install.wim" \) -exec sha1sum {} \; >> "$CHECKSUM_FILE_WINDOWS"
+	if [ "$UNAME" = "BSD" ] || [ "$UNAME" = "Darwin" ] ; then
+		sed -i ".bak" "s#$LOOP/##g" "$CHECKSUM_FILE_WINDOWS"
+	else
+		sed -i "s#$LOOP/##g" "$CHECKSUM_FILE_WINDOWS"
+	fi
 
 	echo Copying the Windows ISO files
-	rsync -qah --exclude=sources/install.wim "$LOOP"/* "$PART_MOUNT"
-	
+	rsync -qcah --exclude=sources/install.wim "$LOOP"/* "$PART_MOUNT"
+
 	echo Splitting the Windows "install.wim" file
-	wimsplit "$LOOP"/sources/install.wim /Volumes/WIN/sources/install.swm 1000 --check
+	TEMPWIM=$(mktemp -d)
+	wimsplit "$LOOP"/sources/install.wim "$TEMPWIM"/install.swm 1000 --check
+
+	echo Generating checksums for the split "install.wim" file
+	CHECKSUM_FILE_TEMPWIM=$(mktemp)
+	find "$TEMPWIM" -type f -exec sha1sum {} \; >> "$CHECKSUM_FILE_TEMPWIM"
+	if [ "$UNAME" = "BSD" ] || [ "$UNAME" = "Darwin" ] ; then
+		sed -i ".bak" "s#$TEMPWIM/##g" "$CHECKSUM_FILE_TEMPWIM"
+	else
+		sed -i "s#$TEMPWIM/##g" "$CHECKSUM_FILE_TEMPWIM"
+	fi
+
+	echo Moving the split "install.wim" to the USB
+	mv "$TEMPWIM"/install*.swm /Volumes/WIN/sources/
+
+	echo Removing the temporary "install.wim" directory
+	rmdir "$TEMPWIM"
 
 	echo Validating the Windows partition files
 	if cd "$PART_MOUNT" ; sha1sum --status -c "$CHECKSUM_FILE_WINDOWS" ; then
 		echo The Windows partition passed the checksum
 	else
-		FAILED=true
+		WINDOWS_FAILED=true
 		echo The Windows partition failed the checksum
 	fi
 	rm "$CHECKSUM_FILE_WINDOWS"
 
+	echo Validating the Windows "install.wim" files
+	if cd "$PART_MOUNT/sources" ; sha1sum --status -c "$CHECKSUM_FILE_TEMPWIM" ; then
+		echo The Windows "install.wim" files passed the checksum
+	else
+		WIM_FAILED=true
+		echo The Windows "install.wim" files failed the checksum
+	fi
+	rm "$CHECKSUM_FILE_TEMPWIM"
+
 	unmount || true
-	
+
 	echo Unmounting the Windows ISO
 	umount "$LOOP"
 
 	if ! [ "$UNAME" = "Darwin" ] ; then
 		echo Cleaning up
-		rmdir "$LOOP" "$PART_MOUNT" 
+		rmdir "$LOOP" "$PART_MOUNT"
 	fi
-	
-	if [ -n "$FAILED" ] ; then
+
+	if [ -n "$WINDOWS_FAILED" ] || [ -n "$WIM_FAILED" ] ; then
 		exit 0
 	else
 		exit 1
