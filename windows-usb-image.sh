@@ -127,7 +127,7 @@ cp_checksum()
 		) | fdisk "$DISK" || partprobe && sleep 3
 		mkfs.fat -F 32 "$DISK""$PART"
 		PART_MOUNT=$(mktemp -d)
-		mount -o loop "$DISK""$PART" "$PART_MOUNT"
+		mount "$DISK""$PART" "$PART_MOUNT"
 	fi
 
 	echo Generating checksums for the Windows partition files
