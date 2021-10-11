@@ -144,7 +144,14 @@ cp_checksum()
 
 	echo Splitting the Windows "install.wim" file
 	TEMPWIM=$(mktemp -d)
-	wimsplit "$LOOP"/sources/install.wim "$TEMPWIM"/install.swm 1000 --check
+	wimsplit "$LOOP"/sources/install.wim "$TEMPWIM"/install.swm 4000 --check
+
+	echo Validating the Windows "install.wim" file
+	if wimverify "$TEMPWIM"/install.swm --ref="$TEMPWIM/install*.swm" ; then
+		echo The Windows "install.wim" passed validation
+	else
+		echo The Windows "install.wim" failed validation
+	fi
 
 	echo Generating checksums for the split "install.wim" file
 	CHECKSUM_FILE_TEMPWIM=$(mktemp)
