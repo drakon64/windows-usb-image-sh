@@ -11,7 +11,7 @@ VCS:     {{{ git_dir_vcs }}}
 
 Source:  {{{ git_dir_pack }}}
 
-Requires: rsync
+Requires: rsync wimlib
 
 BuildArch: noarch
 
