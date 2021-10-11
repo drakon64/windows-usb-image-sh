@@ -111,7 +111,7 @@ cp_checksum()
 			echo quit
 			echo y
 		) | fdisk -e "$DISK"
-		PART_MOUNT="/Volumes/WIN/"
+		PART_MOUNT="/Volumes/WIN"
 	else
 		(
 			echo o
@@ -156,7 +156,7 @@ cp_checksum()
 	fi
 
 	echo Moving the split "install.wim" to the USB
-	mv "$TEMPWIM"/install*.swm /Volumes/WIN/sources/
+	mv "$TEMPWIM"/install*.swm "$PART_MOUNT"/sources/
 
 	echo Removing the temporary "install.wim" directory
 	rmdir "$TEMPWIM"
