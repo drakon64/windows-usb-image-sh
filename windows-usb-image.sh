@@ -170,7 +170,7 @@ cp_checksum()
 	rmdir "$TEMPWIM"
 
 	echo Validating the Windows partition files
-	if cd "$PART_MOUNT" ; sha256sum --status -c "$CHECKSUM_FILE_WINDOWS" ; then
+	if cd "$PART_MOUNT" && sha256sum --status -c "$CHECKSUM_FILE_WINDOWS" ; then
 		echo The Windows partition passed the checksum
 	else
 		WINDOWS_FAILED=true
@@ -197,7 +197,7 @@ cp_checksum()
 		rmdir "$LOOP" "$PART_MOUNT"
 	fi
 
-	if [ -n "$WINDOWS_FAILED" ] || [ -n "$WIM_FAILED" ] ; then
+	if [ -n "$WINDOWS_FAILED" ] && [ -n "$WIM_FAILED" ] ; then
 		exit 0
 	else
 		exit 1
