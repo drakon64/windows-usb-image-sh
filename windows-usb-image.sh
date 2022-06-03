@@ -84,7 +84,7 @@ check_if_writeable()
 
 cp_checksum()
 {
-	if [ "$EXFAT" != "1" ] ; then
+	if ! [ "$EXFAT" = 1 ] ; then
 		EXFAT=0
 	fi
 
@@ -102,13 +102,13 @@ cp_checksum()
 		LOOP=$(hdiutil mount "$ISO" | awk '{ print $2 }')
 	fi
 
-	if [ "$EXFAT" == "0" ] ; then
+	if [ "$EXFAT" = 0 ] ; then
 		echo Formatting the USB drive as FAT32
 	else
 		echo Formatting the USB drive as exFAT
 	fi
 	if [ "$UNAME" = "Darwin" ] ; then
-		if [ "$EXFAT" == "0" ] ; then
+		if [ "$EXFAT" = 0 ] ; then
 			diskutil eraseDisk FAT32 WIN MBR "$DISK"
 		else
 			diskutil eraseDisk ExFAT WIN MBR "$DISK"
@@ -138,7 +138,7 @@ cp_checksum()
 			echo a
 			echo w
 		) | fdisk "$DISK" || partprobe && sleep 3
-		if [ "$EXFAT" == "0" ] ; then
+		if [ "$EXFAT" = 0 ] ; then
 			mkfs.fat -F 32 "$DISK""$PART"
 		else
 			mkfs.exfat "$DISK""$PART"
@@ -149,7 +149,7 @@ cp_checksum()
 
 	echo Generating checksums for the Windows partition files
 	CHECKSUM_FILE_WINDOWS=$(mktemp)
-	if [ "$EXFAT" == "0" ] ; then
+	if [ "$EXFAT" = 0 ] ; then
 		find "$LOOP" -type f \( ! -iname "install.wim" \) -exec sha256sum {} \; >> "$CHECKSUM_FILE_WINDOWS"
 	else
 		find "$LOOP" -type f -exec sha256sum {} \; >> "$CHECKSUM_FILE_WINDOWS"
@@ -161,7 +161,7 @@ cp_checksum()
 	fi
 
 	echo Copying the Windows ISO files
-	if [ "$EXFAT" == "0" ] ; then
+	if [ "$EXFAT" = 0 ] ; then
 		rsync -qcah --exclude=sources/install.wim "$LOOP"/* "$PART_MOUNT"
 
 	 	echo Splitting the Windows "install.wim" file
@@ -202,7 +202,7 @@ cp_checksum()
 	fi
 	rm "$CHECKSUM_FILE_WINDOWS"
 
-	if [ "$EXFAT" == "0" ] ; then
+	if [ "$EXFAT" = 0 ] ; then
 		echo Validating the Windows "install.wim" files
 	 	if cd "$PART_MOUNT/sources" ; sha256sum --status -c "$CHECKSUM_FILE_TEMPWIM" ; then
 	 		echo The Windows "install.wim" files passed the checksum
@@ -262,7 +262,7 @@ dd_checksum()
 	fi
 }
 
-while getopts "s:d:c:b:E:CDhH" arg ; do
+while getopts "s:d:c:b:ECDhH" arg ; do
 	case $arg in
 		h)
 			usage
