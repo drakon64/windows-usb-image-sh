@@ -9,7 +9,7 @@ Bash script for copying Windows ISO images (or any ISO) to block devices
 ## Required arguments
 * `-s`    Source image file
 * `-d`    Destination block device
-* `-c`    SHA1 checksum of source image file
+* `-c`    SHA256 checksum of source image file
 * `-C|-D` Specify whether to use Copy Mode (`-C`) or DD Mode (`-D`)
 
 ## Optional arguments

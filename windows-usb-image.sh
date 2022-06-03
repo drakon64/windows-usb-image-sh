@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-USAGE='windows-usb-image-sh\n\nBash script for copying Windows ISO images (or any ISO) to block devices\n\nRequired arguments:\n-s    Source image file\n-d    Destination block device (/dev/disk/by-id/)\n-c    SHA1 checksum of source image file\n-C|-D Specify whether to use Copy Mode (-C) or DD Mode (-D)\n\nOptional arguments:\n-b    Partition block size\n-h    Show help\n-H    Show full help\n'
+USAGE='windows-usb-image-sh\n\nBash script for copying Windows ISO images (or any ISO) to block devices\n\nRequired arguments:\n-s    Source image file\n-d    Destination block device (/dev/disk/by-id/)\n-c    SHA256 checksum of source image file\n-C|-D Specify whether to use Copy Mode (-C) or DD Mode (-D)\n\nOptional arguments:\n-b    Partition block size\n-h    Show help\n-H    Show full help\n'
 FULL_USAGE='\nCopy Mode:\nCopy Mode will format the destination block device with an MBR partition table and create a FAT32 partition on it. This partition contains the source image file contents. The Windows "install.wim" file will be split into blocks of 1000MB to avoid FAT32 file size limitations.\n\nThis USB should be compatible with both BIOS and UEFI.\n\nDD Mode:\nDD Mode will use "dd" to clone the source image onto the destination block device. Copying will not be performed if the destination block devices checksum is the same as that of the source images.\n'
 
 usage()
@@ -50,7 +50,7 @@ iso_checksum()
 {
 	CHECKSUM=$(echo "$CHECKSUM" | awk '{print tolower($0)}')
 
-	if [ "$(sha1sum "$ISO" | awk '{print $1}')" = "$CHECKSUM" ] ; then
+	if [ "$(sha256sum "$ISO" | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The ISO file passed the checksum
 	else
 		echo The ISO file failed the checksum
@@ -132,7 +132,7 @@ cp_checksum()
 
 	echo Generating checksums for the Windows partition files
 	CHECKSUM_FILE_WINDOWS=$(mktemp)
-	find "$LOOP" -type f \( ! -iname "install.wim" \) -exec sha1sum {} \; >> "$CHECKSUM_FILE_WINDOWS"
+	find "$LOOP" -type f \( ! -iname "install.wim" \) -exec sha256sum {} \; >> "$CHECKSUM_FILE_WINDOWS"
 	if [ "$UNAME" = "BSD" ] || [ "$UNAME" = "Darwin" ] ; then
 		sed -i ".bak" "s#$LOOP/##g" "$CHECKSUM_FILE_WINDOWS"
 	else
@@ -155,7 +155,7 @@ cp_checksum()
 
 	echo Generating checksums for the split "install.wim" file
 	CHECKSUM_FILE_TEMPWIM=$(mktemp)
-	find "$TEMPWIM" -type f -exec sha1sum {} \; >> "$CHECKSUM_FILE_TEMPWIM"
+	find "$TEMPWIM" -type f -exec sha256sum {} \; >> "$CHECKSUM_FILE_TEMPWIM"
 	if [ "$UNAME" = "BSD" ] || [ "$UNAME" = "Darwin" ] ; then
 		sed -i ".bak" "s#$TEMPWIM/##g" "$CHECKSUM_FILE_TEMPWIM"
 	else
@@ -169,7 +169,7 @@ cp_checksum()
 	rmdir "$TEMPWIM"
 
 	echo Validating the Windows partition files
-	if cd "$PART_MOUNT" ; sha1sum --status -c "$CHECKSUM_FILE_WINDOWS" ; then
+	if cd "$PART_MOUNT" ; sha256sum --status -c "$CHECKSUM_FILE_WINDOWS" ; then
 		echo The Windows partition passed the checksum
 	else
 		WINDOWS_FAILED=true
@@ -178,7 +178,7 @@ cp_checksum()
 	rm "$CHECKSUM_FILE_WINDOWS"
 
 	echo Validating the Windows "install.wim" files
-	if cd "$PART_MOUNT/sources" ; sha1sum --status -c "$CHECKSUM_FILE_TEMPWIM" ; then
+	if cd "$PART_MOUNT/sources" ; sha256sum --status -c "$CHECKSUM_FILE_TEMPWIM" ; then
 		echo The Windows "install.wim" files passed the checksum
 	else
 		WIM_FAILED=true
@@ -212,7 +212,7 @@ dd_checksum()
 	iso_checksum
 
 	echo Checking if the USB already matches the ISO
-	if [ "$(head -c "$(stat "$STAT" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
+	if [ "$(head -c "$(stat "$STAT" "$ISO")" "$DISK" | sha256sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB already matches the ISO
 		exit 0
 	elif [ -z "$BLOCK_SIZE" ] ; then
@@ -224,7 +224,7 @@ dd_checksum()
 	fi
 
 	echo Checking the USB integrity
-	if [ "$(head -c "$(stat "$STAT" "$ISO")" "$DISK" | sha1sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
+	if [ "$(head -c "$(stat "$STAT" "$ISO")" "$DISK" | sha256sum | awk '{print $1}')" = "$CHECKSUM" ] ; then
 		echo The USB has passed the checksum
 		unmount || true
 		exit 0
