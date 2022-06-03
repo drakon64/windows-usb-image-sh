@@ -203,12 +203,12 @@ cp_checksum()
 	rm "$CHECKSUM_FILE_WINDOWS"
 
 	if [ "$EXFAT" = 0 ] ; then
-		echo Validating the Windows "install.wim" files
+		echo Validating the Windows "install.swm" files
 	 	if cd "$PART_MOUNT/sources" ; sha256sum --status -c "$CHECKSUM_FILE_TEMPWIM" ; then
-	 		echo The Windows "install.wim" files passed the checksum
+	 		echo The Windows "install.swm" files passed the checksum
 	 	else
 	 		WIM_FAILED=true
-	 		echo The Windows "install.wim" files failed the checksum
+	 		echo The Windows "install.swm" files failed the checksum
 	 	fi
 	 	rm "$CHECKSUM_FILE_TEMPWIM"
 	fi
