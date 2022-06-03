@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
-USAGE='windows-usb-image-sh\n\nBash script for copying Windows ISO images (or any ISO) to block devices\n\nRequired arguments:\n-s    Source image file\n-d    Destination block device (/dev/disk/by-id/)\n-c    SHA256 checksum of source image file\n-C|-D Specify whether to use Copy Mode (-C) or DD Mode (-D)\n\nOptional arguments:\n-b    Partition block size\n-h    Show help\n-H    Show full help\n'
-FULL_USAGE='\nCopy Mode:\nCopy Mode will format the destination block device with an MBR partition table and create a ExFAT partition on it. This partition contains the source image file contents.\n\nThis USB should be compatible with both BIOS and UEFI.\n\nDD Mode:\nDD Mode will use "dd" to clone the source image onto the destination block device. Copying will not be performed if the destination block devices checksum is the same as that of the source images.\n'
+USAGE='windows-usb-image-sh\n\nBash script for copying Windows ISO images (or any ISO) to block devices\n\nRequired arguments:\n-s    Source image file\n-d    Destination block device (/dev/disk/by-id/)\n-c    SHA256 checksum of source image file\n-C|-D Specify whether to use Copy Mode (-C) or DD Mode (-D)\n\nOptional arguments:\n-E    Specify to use exFAT instead of FAT32\n-b    Partition block size\n-h    Show help\n-H    Show full help\n'
+FULL_USAGE='\nCopy Mode:\nCopy Mode will format the destination block device with an MBR partition table and create a FAT32 partition on it. This partition contains the source image file contents. The Windows "install.wim" file will be split into blocks of 4000MB to avoid FAT32 file size limitations. Optionally, the created partition can be formatted with exFAT instead, bypassing the FAT32 file size limitation.\n\nThis USB should be compatible with both BIOS and UEFI when formatted as FAT32. UEFI compatability is not guaranteed with exFAT filesystems.\n\nDD Mode:\nDD Mode will use "dd" to clone the source image onto the destination block device. Copying will not be performed if the destination block devices checksum is the same as that of the source images.\n'
 
 usage()
 {
@@ -84,6 +84,10 @@ check_if_writeable()
 
 cp_checksum()
 {
+	if [ "$EXFAT" != "1" ] ; then
+		EXFAT=0
+	fi
+
 	disk_mode
 	check_if_writeable
 	os
@@ -98,9 +102,17 @@ cp_checksum()
 		LOOP=$(hdiutil mount "$ISO" | awk '{ print $2 }')
 	fi
 
-	echo Formatting the USB drive as ExFAT
+	if [ "$EXFAT" == "0" ] ; then
+		echo Formatting the USB drive as FAT32
+	else
+		echo Formatting the USB drive as exFAT
+	fi
 	if [ "$UNAME" = "Darwin" ] ; then
-		diskutil eraseDisk ExFAT WIN MBR "$DISK"
+		if [ "$EXFAT" == "0" ] ; then
+			diskutil eraseDisk FAT32 WIN MBR "$DISK"
+		else
+			diskutil eraseDisk ExFAT WIN MBR "$DISK"
+		fi
 		(
 			echo edit 1
 			echo EF
@@ -126,14 +138,22 @@ cp_checksum()
 			echo a
 			echo w
 		) | fdisk "$DISK" || partprobe && sleep 3
-		mkfs.exfat "$DISK""$PART"
+		if [ "$EXFAT" == "0" ] ; then
+			mkfs.fat -F 32 "$DISK""$PART"
+		else
+			mkfs.exfat "$DISK""$PART"
+		fi
 		PART_MOUNT=$(mktemp -d)
 		mount "$DISK""$PART" "$PART_MOUNT"
 	fi
 
 	echo Generating checksums for the Windows partition files
 	CHECKSUM_FILE_WINDOWS=$(mktemp)
-	find "$LOOP" -type f -exec sha256sum {} \; >> "$CHECKSUM_FILE_WINDOWS"
+	if [ "$EXFAT" == "0" ] ; then
+		find "$LOOP" -type f \( ! -iname "install.wim" \) -exec sha256sum {} \; >> "$CHECKSUM_FILE_WINDOWS"
+	else
+		find "$LOOP" -type f -exec sha256sum {} \; >> "$CHECKSUM_FILE_WINDOWS"
+	fi
 	if [ "$UNAME" = "BSD" ] || [ "$UNAME" = "Darwin" ] ; then
 		sed -i ".bak" "s#$LOOP/##g" "$CHECKSUM_FILE_WINDOWS"
 	else
@@ -141,7 +161,37 @@ cp_checksum()
 	fi
 
 	echo Copying the Windows ISO files
-	rsync -qcah "$LOOP"/* "$PART_MOUNT"
+	if [ "$EXFAT" == "0" ] ; then
+		rsync -qcah --exclude=sources/install.wim "$LOOP"/* "$PART_MOUNT"
+
+	 	echo Splitting the Windows "install.wim" file
+	 	TEMPWIM=$(mktemp -d)
+	 	wimsplit "$LOOP"/sources/install.wim "$TEMPWIM"/install.swm 4000 --check
+
+	 	echo Validating the Windows "install.wim" file
+	 	if wimverify "$TEMPWIM"/install.swm --ref="$TEMPWIM/install*.swm" ; then
+	 		echo The Windows "install.wim" passed validation
+	 	else
+	 		echo The Windows "install.wim" failed validation
+	 	fi
+
+	 	echo Generating checksums for the split "install.wim" file
+	 	CHECKSUM_FILE_TEMPWIM=$(mktemp)
+	 	find "$TEMPWIM" -type f -exec sha256sum {} \; >> "$CHECKSUM_FILE_TEMPWIM"
+	 	if [ "$UNAME" = "BSD" ] || [ "$UNAME" = "Darwin" ] ; then
+	 		sed -i ".bak" "s#$TEMPWIM/##g" "$CHECKSUM_FILE_TEMPWIM"
+	 	else
+	 		sed -i "s#$TEMPWIM/##g" "$CHECKSUM_FILE_TEMPWIM"
+	 	fi
+
+	 	echo Moving the split "install.wim" to the USB
+	 	mv "$TEMPWIM"/install*.swm "$PART_MOUNT"/sources/
+
+	 	echo Removing the temporary "install.wim" directory
+	 	rmdir "$TEMPWIM"
+	else
+		rsync -qcah "$LOOP"/* "$PART_MOUNT"
+	fi
 
 	echo Validating the Windows partition files
 	if cd "$PART_MOUNT" && sha256sum --status -c "$CHECKSUM_FILE_WINDOWS" ; then
@@ -151,6 +201,17 @@ cp_checksum()
 		echo The Windows partition failed the checksum
 	fi
 	rm "$CHECKSUM_FILE_WINDOWS"
+
+	if [ "$EXFAT" == "0" ] ; then
+		echo Validating the Windows "install.wim" files
+	 	if cd "$PART_MOUNT/sources" ; sha256sum --status -c "$CHECKSUM_FILE_TEMPWIM" ; then
+	 		echo The Windows "install.wim" files passed the checksum
+	 	else
+	 		WIM_FAILED=true
+	 		echo The Windows "install.wim" files failed the checksum
+	 	fi
+	 	rm "$CHECKSUM_FILE_TEMPWIM"
+	fi
 
 	unmount || true
 
@@ -201,7 +262,7 @@ dd_checksum()
 	fi
 }
 
-while getopts "s:d:c:b:CDhH" arg ; do
+while getopts "s:d:c:b:E:CDhH" arg ; do
 	case $arg in
 		h)
 			usage
@@ -217,6 +278,9 @@ while getopts "s:d:c:b:CDhH" arg ; do
 			;;
 		c)
 			CHECKSUM=$OPTARG
+			;;
+		E)
+		  EXFAT=1
 			;;
 		b)
 			BLOCK_SIZE=$OPTARG
