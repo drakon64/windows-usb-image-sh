@@ -16,7 +16,7 @@ Bash script for copying Windows ISO images (or any ISO) to block devices
 * `-b`    Partition block size
 
 ## Copy Mode
-Copy Mode will format the destination block device with an MBR partition table and create a FAT32 partition on it. This partition contains the source image file contents. The Windows `install.wim` file will be split into blocks of 1000MB to avoid FAT32 file size limitations.
+Copy Mode will format the destination block device with an MBR partition table and create a FAT32 partition on it. This partition contains the source image file contents. The Windows `install.wim` file will be split into blocks of 4000MB to avoid FAT32 file size limitations.
 
 This USB should be compatible with both BIOS and UEFI.
 
