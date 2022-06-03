@@ -111,6 +111,7 @@ cp_checksum()
 			echo quit
 			echo y
 		) | fdisk -e "$DISK"
+		echo
 		PART_MOUNT="/Volumes/WIN"
 	else
 		(
